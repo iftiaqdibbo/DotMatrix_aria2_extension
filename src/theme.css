@@ -1,0 +1,204 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ARIA2 DASHBOARD · THEME
+   ═══════════════════════════════════════════════════════════════════════════
+
+   This is the single source of truth for every visual decision in the
+   extension. style.css contains only structure — it references these tokens
+   and never uses hard-coded values.
+
+   To retheme the extension, edit ONLY this file.
+
+   Three layers, top to bottom:
+     1. PRIMITIVES   raw named color values — the full palette
+     2. SEMANTICS    role-based aliases that map primitives to meaning
+     3. LAYOUT       structural sizing, shape, and typography tokens
+
+   Workflow for common changes:
+     • New accent color  → change --p-accent-* (all seven values in the block)
+     • Lighter UI        → raise --p-gray-* values
+     • Different font    → swap the @import URL + the --font-* strings
+     • Rounder corners   → raise --radius and --radius-sm
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── TYPEFACE IMPORT ────────────────────────────────────────────────────────
+   Load web fonts before anything else.
+   Swap the URL and the --font-* variables in layer 3 together.
+   ─────────────────────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Doto:wght@400;700&family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 1 · PRIMITIVES
+   Raw color values with no semantic meaning attached.
+   These are the building blocks — everything in layer 2 references these.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+    /* ── Neutral scale (dark → light) ──────────────────────────────────────── */
+    --p-black: #000000;
+    --p-gray-950: #050505;
+    --p-gray-900: #0a0a0a;
+    --p-gray-800: #1a1a1a;
+    --p-gray-700: #252525;
+    --p-gray-400: #3a3a3a;
+    --p-gray-300: #707070;
+    --p-gray-100: #d8d8d8;
+
+    /* ── Accent family (red) ────────────────────────────────────────────────── */
+    /* ⚠  ALL rgba() values below are derived from --p-accent-base.             */
+    /*    If you change the hue, update every value in this entire block.       */
+    --p-accent-base: #ff1a1a;
+    --p-accent-light: #ff3333;
+    --p-accent-dim: rgba(255, 26, 26, 0.08); /* tinted surfaces             */
+    --p-accent-glow: rgba(255, 26, 26, 0.25); /* ambient glow, box-shadows   */
+    --p-accent-glow-soft: rgba(
+        255,
+        26,
+        26,
+        0.15
+    ); /* tab counts, subtle overlays */
+    --p-accent-glow-mid: rgba(
+        255,
+        26,
+        26,
+        0.35
+    ); /* hover borders               */
+    --p-accent-glow-hard: rgba(
+        255,
+        26,
+        26,
+        0.45
+    ); /* ripple burst, focus rings   */
+    /* NOTE: fine-grained animation rgba values (0.6–0.85 range) live in        */
+    /* style.css. Search "rgba(255, 26, 26" there if you need to retune them.   */
+
+    /* ── Amber family (warning / waiting) ──────────────────────────────────── */
+    /* ⚠  All rgba() values must stay in sync with --p-amber-base.             */
+    --p-amber-base: #f59e0b;
+    --p-amber-dim: rgba(
+        245,
+        158,
+        11,
+        0.08
+    ); /* tinted surfaces                  */
+    --p-amber-glow: rgba(
+        245,
+        158,
+        11,
+        0.3
+    ); /* dot / button glows               */
+
+    /* ── Green family (success / complete) ─────────────────────────────────── */
+    /* ⚠  All rgba() values must stay in sync with --p-green-base.             */
+    --p-green-base: #00e676;
+    --p-green-dim: rgba(
+        0,
+        230,
+        118,
+        0.08
+    ); /* tinted surfaces                   */
+    --p-green-glow: rgba(
+        0,
+        230,
+        118,
+        0.3
+    ); /* dot / button glows                */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 2 · SEMANTICS
+   Role-based tokens that reference layer 1.
+   These are what style.css consumes — never raw hex values.
+
+   To change which primitive fills a given role, edit the right-hand side.
+   e.g. to make the accent amber:  --accent: var(--p-amber-base);
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+    /* ── Surfaces ───────────────────────────────────────────────────────────── */
+    --bg: var(--p-black); /* page / app background                */
+    --bg-elevated: var(--p-gray-950); /* slightly raised surface              */
+    --bg-card: var(--p-gray-900); /* card / panel background              */
+
+    /* ── Borders ────────────────────────────────────────────────────────────── */
+    --border: var(--p-gray-800); /* default border                       */
+    --border-light: var(
+        --p-gray-700
+    ); /* hover / emphasis border              */
+
+    /* ── Text ───────────────────────────────────────────────────────────────── */
+    --text: var(--p-gray-100); /* primary readable text               */
+    --text-secondary: var(
+        --p-gray-300
+    ); /* supporting / metadata text          */
+    --text-muted: var(--p-gray-400); /* placeholder, disabled, hint text    */
+
+    /* ── Accent ─────────────────────────────────────────────────────────────── */
+    /* Primary interactive color: active states, focus rings, highlights.       */
+    --accent: var(--p-accent-base);
+    --accent-bright: var(--p-accent-light);
+    --accent-dim: var(--p-accent-dim);
+    --accent-glow: var(--p-accent-glow);
+    --accent-glow-soft: var(
+        --p-accent-glow-soft
+    ); /* tab counts, subtle overlays  */
+    --accent-glow-mid: var(
+        --p-accent-glow-mid
+    ); /* hover borders                */
+    --accent-glow-hard: var(
+        --p-accent-glow-hard
+    ); /* ripple burst, focus rings    */
+
+    /* ── Status: danger / error ─────────────────────────────────────────────── */
+    /* Mirrors the accent in this theme. Decouple if you want a separate red.   */
+    --red: var(--p-accent-base);
+    --red-dim: var(--p-accent-dim);
+
+    /* ── Status: warning ────────────────────────────────────────────────────── */
+    --amber: var(--p-amber-base);
+    --amber-dim: var(--p-amber-dim);
+    --amber-glow: var(
+        --p-amber-glow
+    ); /* dot / button glows                   */
+
+    /* ── Status: success ────────────────────────────────────────────────────── */
+    --green: var(--p-green-base);
+    --green-dim: var(--p-green-dim);
+    --green-glow: var(
+        --p-green-glow
+    ); /* dot / button glows                   */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 3 · LAYOUT & TYPOGRAPHY
+   Structural sizing, shape, and font tokens.
+   style.css uses these everywhere instead of hard-coded values.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+    /* ── Shape ──────────────────────────────────────────────────────────────── */
+    --radius: 12px; /* cards, panels, modals                                */
+    --radius-sm: 8px; /* buttons, inputs, badges                              */
+
+    /* ── Sizing ─────────────────────────────────────────────────────────────── */
+    --dot-size: 6px; /* progress dot diameter (base)                     */
+    --sidebar-width: 220px; /* full-page dashboard sidebar                      */
+
+    /* ── Typography ─────────────────────────────────────────────────────────── */
+    /*                                                                            */
+    /* --font-display  dot-matrix / decorative — used for the "aria2" wordmark   */
+    /* --font-mono     monospace — used for stats, labels, badges, code-like UI  */
+    /* --font-body     proportional sans — used for buttons and general prose    */
+    /*                                                                            */
+    /* To change a typeface:                                                      */
+    /*   1. Update the @import URL at the top of this file                       */
+    /*   2. Change the matching --font-* value below                             */
+    --font-display: "Doto", sans-serif;
+    --font-mono: "Space Mono", monospace;
+    --font-body: "Space Grotesk", system-ui, sans-serif;
+}
+
+/* ── Root defaults ───────────────────────────────────────────────────────── */
+/* Applied once here so style.css never needs to re-declare them.            */
+:root {
+    color-scheme: dark;
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+}
