@@ -52,9 +52,39 @@ A browser extension for managing aria2 downloads with a sleek dot-matrix aesthet
 
 ## Install aria2
 
-If you do not already have aria2 installed, use one of the options below.
+### Quick Install (recommended)
 
-### Linux
+Run the installer script — it detects your OS, installs aria2, and starts it with RPC enabled:
+
+**Linux / macOS:**
+```bash
+./install-aria2.sh
+```
+
+**Windows (PowerShell, run as Administrator):**
+```powershell
+.\install-aria2.ps1
+```
+
+You can pass a custom RPC secret as an argument:
+```bash
+./install-aria2.sh my-secret-token
+```
+```powershell
+.\install-aria2.ps1 my-secret-token
+```
+
+The script will:
+1. Detect your package manager (apt, pacman, dnf, brew) or download the Windows binary from GitHub
+2. Install aria2
+3. Start aria2 with RPC on port 6800
+4. Print the RPC URL and secret to use in the extension
+
+### Manual Install
+
+If you prefer to install manually:
+
+**Linux:**
 
 - Arch Linux / CachyOS:
   ```bash
@@ -69,14 +99,14 @@ If you do not already have aria2 installed, use one of the options below.
   sudo dnf install -y aria2
   ```
 
-### macOS
+**macOS:**
 
 Install with Homebrew:
 ```bash
 brew install aria2
 ```
 
-### Windows
+**Windows:**
 
 - Install with Winget:
   ```powershell
@@ -86,6 +116,7 @@ brew install aria2
   ```powershell
   choco install aria2
   ```
+- Or download from [GitHub releases](https://github.com/aria2/aria2/releases)
 
 ### Start aria2 with RPC enabled (required)
 
@@ -96,6 +127,8 @@ aria2c --enable-rpc --rpc-listen-all=false --rpc-listen-port=6800 --rpc-secret="
 
 - Extension default RPC URL: `http://localhost:6800/jsonrpc`
 - Put the same secret in extension options (`Secret Token`)
+
+To auto-start aria2 on login, add the command above (with `-D` for daemon mode) to your shell profile on Linux/macOS, or place a shortcut in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` on Windows.
 
 Optional persistent config (`aria2.conf`):
 ```ini
@@ -199,7 +232,10 @@ This creates:
 ```
 ├── manifest.json          # Chrome extension manifest
 ├── build.sh               # Build script for packaging
+├── install-aria2.sh       # aria2 installer (Linux/macOS)
+├── install-aria2.ps1      # aria2 installer (Windows)
 ├── src/                   # Shared source files
+│   ├── constants.js       # Shared constants (RPC URL, safe mode hosts)
 │   ├── background.js      # Chrome service worker
 │   ├── content.js         # Content script for site-specific URL interception
 │   ├── popup.html/js      # Popup panel
