@@ -1,15 +1,19 @@
 (function() {
-  const DEFAULT_RPC_URL = 'http://localhost:6800/jsonrpc';
-  const DEFAULT_SAFE_MODE_HOSTS = [
-    'gofile.io', '1fichier.com', 'pixeldrain.com', 'mediafire.com',
-    'mega.nz', 'ranoz.net', 'datanodes.to', 'bowfile.com',
-    'dl.free.fr', 'swisstransfer.com', 'freedlink.me', 'fileditch.com',
-    'uploadnow.io', 'wdho.ru', 'mixdrop.', 'chomikuj.pl',
-    'vikingfile.com', 'dayuploads.com', 'downmediaload.com', 'hexload.com',
-    '1cloudfile.com', 'usersdrive.com', 'megaup.net', 'clicknupload.org',
-    'dailyuploads.net', 'rapidgator.net', 'nitroflare.com', 'filebin.net',
-    'oshi.at',
-  ];
+  const DEFAULT_RPC_URL = typeof ARIA2_DEFAULT_RPC_URL !== 'undefined'
+    ? ARIA2_DEFAULT_RPC_URL
+    : 'http://localhost:6800/jsonrpc';
+  const DEFAULT_SAFE_MODE_HOSTS = typeof ARIA2_DEFAULT_SAFE_MODE_HOSTS !== 'undefined'
+    ? ARIA2_DEFAULT_SAFE_MODE_HOSTS
+    : [
+        'gofile.io', '1fichier.com', 'pixeldrain.com', 'mediafire.com',
+        'mega.nz', 'ranoz.net', 'datanodes.to', 'bowfile.com',
+        'dl.free.fr', 'swisstransfer.com', 'freedlink.me', 'fileditch.com',
+        'uploadnow.io', 'wdho.ru', 'mixdrop.', 'chomikuj.pl',
+        'vikingfile.com', 'dayuploads.com', 'downmediaload.com', 'hexload.com',
+        '1cloudfile.com', 'usersdrive.com', 'megaup.net', 'clicknupload.org',
+        'dailyuploads.net', 'rapidgator.net', 'nitroflare.com', 'filebin.net',
+        'oshi.at',
+      ];
 
   function storageGet(keys) {
     return new Promise((resolve) => {
@@ -49,6 +53,7 @@
       aria2_default_download_path: config.downloadPath,
       aria2_hijack_downloads: config.hijackDownloads,
       aria2_safe_mode: config.safeMode,
+      aria2_safe_mode_hosts: config.safeModeHosts,
     });
   }
 

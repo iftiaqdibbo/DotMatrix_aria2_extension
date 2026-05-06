@@ -87,13 +87,32 @@
 
   const alreadySent = new Set();
 
+  let cachedHijackEnabled = null;
+
   async function isHijackEnabled() {
+    if (cachedHijackEnabled !== null) {
+      return cachedHijackEnabled;
+    }
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: "GET_HIJACK_STATUS" }, (response) => {
-        resolve(response && response.enabled);
+        const enabled = response && response.enabled;
+        cachedHijackEnabled = enabled;
+        resolve(enabled);
       });
     });
   }
+
+  if (chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && "aria2_hijack_downloads" in changes) {
+        cachedHijackEnabled = changes.aria2_hijack_downloads.newValue || false;
+      }
+    });
+  }
+
+  setInterval(() => {
+    cachedHijackEnabled = null;
+  }, 30000);
 
   async function sendToAria2(url, siteName) {
     if (!url || !url.startsWith("http")) return;

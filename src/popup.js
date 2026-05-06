@@ -367,7 +367,7 @@
   root.appendChild(app);
   app.dispatchEvent(new Event("mount"));
 
-  window.addEventListener("unload", () => {
+  window.addEventListener("beforeunload", () => {
     app.dispatchEvent(new Event("unmount"));
   });
 })();

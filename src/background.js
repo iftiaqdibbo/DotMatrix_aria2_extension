@@ -1,11 +1,20 @@
-const DEFAULT_RPC_URL = "http://localhost:6800/jsonrpc";
+importScripts("constants.js");
 
-// Badge accent color — keep in sync with --p-accent-base in src/theme.css
 const BADGE_COLOR = "#ff1a1a";
 
 const downloadItems = {};
+const DOWNLOAD_ITEM_TTL = 60000;
 const capturedIds = new Set();
 const interceptedUrls = new Set();
+
+function trackDownloadItem(id, item) {
+  downloadItems[id] = item;
+  setTimeout(() => {
+    if (downloadItems[id]) {
+      delete downloadItems[id];
+    }
+  }, DOWNLOAD_ITEM_TTL);
+}
 
 function isChromium() {
   return (
@@ -87,7 +96,7 @@ async function rpcCall(method, params) {
     "aria2_rpc_url",
     "aria2_rpc_secret",
   ]);
-  const rpcUrl = aria2_rpc_url || DEFAULT_RPC_URL;
+  const rpcUrl = aria2_rpc_url || ARIA2_DEFAULT_RPC_URL;
   const secretToken = aria2_rpc_secret ? [`token:${aria2_rpc_secret}`] : [];
 
   const body = {
@@ -181,24 +190,6 @@ async function addUriToAria2(
   return rpcCall("aria2.addUri", [[url], options]);
 }
 
-async function captureURL(
-  url,
-  referer,
-  cookies,
-  filename,
-  directory,
-  extraOptions,
-) {
-  return addUriToAria2(
-    url,
-    referer,
-    cookies,
-    filename,
-    directory,
-    extraOptions,
-  );
-}
-
 function showNotification(title, message) {
   chrome.notifications
     .create({
@@ -209,38 +200,6 @@ function showNotification(title, message) {
     })
     .catch(() => {});
 }
-
-const DEFAULT_SAFE_MODE_HOSTS = [
-  "gofile.io",
-  "1fichier.com",
-  "pixeldrain.com",
-  "mediafire.com",
-  "mega.nz",
-  "ranoz.net",
-  "datanodes.to",
-  "bowfile.com",
-  "dl.free.fr",
-  "swisstransfer.com",
-  "freedlink.me",
-  "fileditch.com",
-  "uploadnow.io",
-  "wdho.ru",
-  "mixdrop.",
-  "chomikuj.pl",
-  "vikingfile.com",
-  "dayuploads.com",
-  "downmediaload.com",
-  "hexload.com",
-  "1cloudfile.com",
-  "usersdrive.com",
-  "megaup.net",
-  "clicknupload.org",
-  "dailyuploads.net",
-  "rapidgator.net",
-  "nitroflare.com",
-  "filebin.net",
-  "oshi.at",
-];
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -260,7 +219,7 @@ chrome.runtime.onInstalled.addListener(() => {
     (result) => {
       const defaults = {};
       if (!result.aria2_rpc_url) {
-        defaults.aria2_rpc_url = DEFAULT_RPC_URL;
+        defaults.aria2_rpc_url = ARIA2_DEFAULT_RPC_URL;
       }
       if (result.aria2_hijack_downloads === undefined) {
         defaults.aria2_hijack_downloads = false;
@@ -269,7 +228,7 @@ chrome.runtime.onInstalled.addListener(() => {
         defaults.aria2_safe_mode = true;
       }
       if (result.aria2_safe_mode_hosts === undefined) {
-        defaults.aria2_safe_mode_hosts = DEFAULT_SAFE_MODE_HOSTS;
+        defaults.aria2_safe_mode_hosts = ARIA2_DEFAULT_SAFE_MODE_HOSTS;
       }
       if (Object.keys(defaults).length > 0) {
         chrome.storage.local.set(defaults);
@@ -294,7 +253,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const cookies = await getCookiesForUrls([referer, ...urls], cookieStoreId);
     for (const url of urls) {
       try {
-        await captureURL(url, referer, cookies);
+        await addUriToAria2(url, referer, cookies);
         showNotification("aria2", "Download added successfully");
       } catch (err) {
         console.error("[Aria2] RPC error:", err);
@@ -349,7 +308,8 @@ function hostMatchesUrl(host, url) {
   try {
     const hostname = new URL(url).hostname;
     if (host.endsWith(".")) {
-      return hostname.startsWith(host) || hostname.includes("." + host);
+      const prefix = host.slice(0, -1);
+      return hostname === prefix || hostname.endsWith("." + prefix);
     }
     return hostname === host || hostname.endsWith("." + host);
   } catch {
@@ -366,7 +326,7 @@ async function getSafeModeOptions(url) {
     return null;
   }
   const safeModeHosts =
-    settings.aria2_safe_mode_hosts || DEFAULT_SAFE_MODE_HOSTS;
+    settings.aria2_safe_mode_hosts || ARIA2_DEFAULT_SAFE_MODE_HOSTS;
   const needsSafeMode = safeModeHosts.some((host) => hostMatchesUrl(host, url));
   if (!needsSafeMode) {
     return null;
@@ -382,7 +342,7 @@ async function captureDownloadItem(item, referer, cookies) {
   const url = item.finalUrl || item.url;
   const filename = basename(item.filename);
   const extraOptions = await getSafeModeOptions(url);
-  await captureURL(url, referer, cookies, filename, null, extraOptions);
+  await addUriToAria2(url, referer, cookies, filename, null, extraOptions);
 }
 
 async function handleDownload(downloadItem, handler) {
@@ -469,7 +429,7 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
       }
     });
   } else {
-    downloadItems[downloadItem.id] = downloadItem;
+    trackDownloadItem(downloadItem.id, downloadItem);
   }
 });
 
@@ -478,7 +438,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const referer = request.referrer ?? "";
     const url = request.url;
     getCookiesForUrls([referer, url])
-      .then((cookies) => captureURL(url, referer, cookies))
+      .then((cookies) => addUriToAria2(url, referer, cookies))
       .then((result) => sendResponse({ success: true, gid: result }))
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
@@ -502,7 +462,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then((extraOptions) => {
         return getCookiesForUrls([referer, url], cookieStoreId).then(
           (cookies) =>
-            captureURL(url, referer, cookies, null, null, extraOptions),
+            addUriToAria2(url, referer, cookies, null, null, extraOptions),
         );
       })
       .then((result) => sendResponse({ success: true, gid: result }))

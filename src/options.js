@@ -322,6 +322,7 @@ function OptionsApp(embedded) {
         downloadPath: container.querySelector('#download-path').value.trim(),
         hijackDownloads: container.querySelector('#hijack-toggle').checked,
         safeMode: container.querySelector('#safe-mode-toggle').checked,
+        safeModeHosts: currentHosts,
       });
       
       testResult.textContent = 'settings saved!';
