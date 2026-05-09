@@ -18,7 +18,8 @@ A browser extension for managing aria2 downloads with a sleek dot-matrix aesthet
 - **Site Interception**: Auto-detect download URLs from 30+ file hosting sites (Gofile, 1Fichier, Pixeldrain, MediaFire, RapidGator, etc.)
 - **Safe Mode**: Toggle to force single-connection downloads for rate-limited hosts — prevents 429 errors and connection drops
 - **Safe Mode Site Management**: Add and remove sites from the safe mode list directly in the options UI — no code editing required
-- **Shared Options**: Popup and full dashboard share the same options page with tabbed navigation (General + Safe Mode)
+- **File Extension Filters**: Block specific file types (e.g., `.torrent`, `.exe`) from being captured — useful for files you want the browser to handle natively
+- **Shared Options**: Popup and full dashboard share the same options page with tabbed navigation (General + Safe Mode + Filters)
 - **Dot-Matrix Aesthetic**: Dark theme with monospace fonts, red accents, and fluid animations (liquid progress bars, sonar rings, spring row entrances, ambient glows)
 - **Modular Theming**: All colors, fonts, and sizing live in `src/theme.css` — retheme the entire extension by editing one file
 - **Toggleable Hijacking**: Enable/disable browser download interception
@@ -179,6 +180,30 @@ Changes take effect immediately — no need to save or reload.
 
 To add a new site for content script interception (auto-detecting download URLs), you still need to add a regex pattern to `siteInterceptors` in `src/content.js`. However, adding a domain to the safe mode list only requires the options UI — if you're already intercepting the URL through hijack or context menu, safe mode will apply automatically.
 
+### File Extension Filters
+
+File extension filters let you exclude specific file types from being captured by aria2. When a filter is active, downloads matching the extension will be ignored by:
+- Browser download hijacking
+- Content script interception
+- Context menu "Download with aria2"
+- Manual "Add Download"
+
+This is useful for file types you want the browser to handle natively instead of sending to aria2.
+
+#### Managing Filters
+
+Filters are managed through the options page:
+
+1. Open the extension options (gear icon from popup, or from the full dashboard)
+2. Switch to the **Filters** tab
+3. Type a file extension (e.g. `.torrent`, `.exe`, `.zip`) and click "add" or press Enter
+4. Extensions are normalized with a leading dot and stored lowercase
+5. Remove filters by clicking the X button on any filter chip
+
+Changes take effect immediately — no need to save or reload.
+
+⚠ **Note:** Filtering happens on the URL pathname. URLs without a recognizable file extension in the path (e.g., API-generated downloads) cannot be filtered. For those cases, use the "Hijack Downloads" toggle to selectively disable interception.
+
 ## Usage
 
 ### Popup Panel
@@ -198,6 +223,7 @@ To add a new site for content script interception (auto-detecting download URLs)
 ### Options Page
 - **General tab**: RPC URL, secret token, download path, hijack toggle, test connection, quick actions
 - **Safe Mode tab**: Safe mode toggle, managed sites list with add/remove
+- **Filters tab**: File extension filter list with add/remove — block specific file types from being captured
 - Accessible from popup (gear icon), full dashboard (gear icon), or `chrome://extensions` → options
 
 ### Download Hijacking

@@ -1,5 +1,6 @@
 const {
   DEFAULT_SAFE_MODE_HOSTS,
+  DEFAULT_FILTER_EXTENSIONS,
   getConfig,
   saveConfig,
   testConnectionWithParams,
@@ -9,6 +10,7 @@ const {
 function OptionsApp(embedded) {
   let activeTab = 'general';
   let currentHosts = [];
+  let currentFilters = [];
 
   const container = document.createElement('div');
   container.className = 'app options-mode';
@@ -62,6 +64,10 @@ function OptionsApp(embedded) {
     <button class="options-tab" data-tab="safe-mode">
       <span class="tab-dot tab-dot--safe-mode"></span>
       safe mode
+    </button>
+    <button class="options-tab" data-tab="filters">
+      <span class="tab-dot tab-dot--filters"></span>
+      filters
     </button>
   `;
 
@@ -229,8 +235,38 @@ function OptionsApp(embedded) {
     </div>
   `;
 
+  const filtersPanel = document.createElement('div');
+  filtersPanel.className = 'tab-panel';
+  filtersPanel.id = 'tab-filters';
+  filtersPanel.innerHTML = `
+    <div class="settings-container">
+      <section class="settings-section">
+        <h2 class="section-title">
+          <span class="dot-indicator"></span>
+          file extension filters
+        </h2>
+
+        <div class="form-group">
+          <span class="input-hint" style="display: block; margin-bottom: 12px;">Downloads with matching file extensions will be ignored. Add extensions like <strong>.torrent</strong> or <strong>.exe</strong> to prevent them from being sent to aria2.</span>
+
+          <div class="safe-mode-host-add">
+            <input
+              type="text"
+              id="add-filter-input"
+              class="input"
+              placeholder="e.g. .torrent"
+            >
+            <button class="btn btn-primary" id="add-filter-btn">add</button>
+          </div>
+          <div class="safe-mode-hosts-list" id="filters-list"></div>
+        </div>
+      </section>
+    </div>
+  `;
+
   tabContent.appendChild(generalPanel);
   tabContent.appendChild(safeModePanel);
+  tabContent.appendChild(filtersPanel);
   content.appendChild(tabNav);
   content.appendChild(tabContent);
 
@@ -277,6 +313,39 @@ function OptionsApp(embedded) {
     });
   }
 
+  function renderFiltersList() {
+    const listEl = container.querySelector('#filters-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    if (currentFilters.length === 0) {
+      listEl.innerHTML = '<div class="empty-hosts">no filters configured</div>';
+      return;
+    }
+    currentFilters.forEach((ext, index) => {
+      const chip = document.createElement('div');
+      chip.className = 'host-chip';
+      chip.innerHTML = `
+        <span class="host-chip-name">${escapeHtml(ext)}</span>
+        <button class="host-chip-remove" data-index="${index}" title="Remove ${escapeHtml(ext)}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      `;
+      listEl.appendChild(chip);
+    });
+
+    listEl.querySelectorAll('.host-chip-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.index);
+        currentFilters.splice(idx, 1);
+        chrome.storage.local.set({ aria2_filter_extensions: currentFilters });
+        renderFiltersList();
+      });
+    });
+  }
+
   function switchTab(tab) {
     activeTab = tab;
     tabNav.querySelectorAll('.options-tab').forEach(t => {
@@ -296,6 +365,7 @@ function OptionsApp(embedded) {
   container.addEventListener('mount', async () => {
     const config = await getConfig();
     currentHosts = [...config.safeModeHosts];
+    currentFilters = [...config.filterExtensions];
 
     container.querySelector('#rpc-url').value = config.rpcUrl;
     container.querySelector('#rpc-secret').value = config.secret;
@@ -305,6 +375,7 @@ function OptionsApp(embedded) {
     container.querySelector('#completion-notif-toggle').checked = config.completionNotifications;
 
     renderHostsList();
+    renderFiltersList();
 
     const testBtn = container.querySelector('#test-connection');
     const testResult = container.querySelector('#test-result');
@@ -313,6 +384,8 @@ function OptionsApp(embedded) {
     const addDownloadBtn = container.querySelector('#add-download');
     const addHostInput = container.querySelector('#add-host-input');
     const addHostBtn = container.querySelector('#add-host-btn');
+    const addFilterInput = container.querySelector('#add-filter-input');
+    const addFilterBtn = container.querySelector('#add-filter-btn');
 
     testBtn.addEventListener('click', async () => {
       testResult.textContent = 'testing...';
@@ -339,6 +412,7 @@ function OptionsApp(embedded) {
         safeMode: container.querySelector('#safe-mode-toggle').checked,
         safeModeHosts: currentHosts,
         completionNotifications: container.querySelector('#completion-notif-toggle').checked,
+        filterExtensions: currentFilters,
       });
       
       testResult.textContent = 'settings saved!';
@@ -368,6 +442,27 @@ function OptionsApp(embedded) {
       }
     });
 
+    addFilterBtn.addEventListener('click', () => {
+      let ext = addFilterInput.value.trim();
+      if (!ext) return;
+      if (ext.startsWith('.')) ext = ext.toLowerCase();
+      else ext = '.' + ext.toLowerCase();
+      if (currentFilters.includes(ext)) {
+        addFilterInput.value = '';
+        return;
+      }
+      currentFilters.push(ext);
+      chrome.storage.local.set({ aria2_filter_extensions: currentFilters });
+      addFilterInput.value = '';
+      renderFiltersList();
+    });
+
+    addFilterInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        addFilterBtn.click();
+      }
+    });
+
     if (openDashboardBtn) {
       openDashboardBtn.addEventListener('click', () => {
         chrome.tabs.create({ url: chrome.runtime.getURL('src/full.html') });
@@ -393,6 +488,10 @@ function OptionsApp(embedded) {
       if (area === 'local' && changes.aria2_safe_mode_hosts) {
         currentHosts = changes.aria2_safe_mode_hosts.newValue || [...DEFAULT_SAFE_MODE_HOSTS];
         renderHostsList();
+      }
+      if (area === 'local' && changes.aria2_filter_extensions) {
+        currentFilters = changes.aria2_filter_extensions.newValue || [];
+        renderFiltersList();
       }
     });
   });

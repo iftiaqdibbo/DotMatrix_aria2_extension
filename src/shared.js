@@ -2,6 +2,9 @@
   const DEFAULT_RPC_URL = typeof ARIA2_DEFAULT_RPC_URL !== 'undefined'
     ? ARIA2_DEFAULT_RPC_URL
     : 'http://localhost:6800/jsonrpc';
+  const DEFAULT_FILTER_EXTENSIONS = typeof ARIA2_DEFAULT_FILTER_EXTENSIONS !== 'undefined'
+    ? ARIA2_DEFAULT_FILTER_EXTENSIONS
+    : [];
   const DEFAULT_SAFE_MODE_HOSTS = typeof ARIA2_DEFAULT_SAFE_MODE_HOSTS !== 'undefined'
     ? ARIA2_DEFAULT_SAFE_MODE_HOSTS
     : [
@@ -36,6 +39,7 @@
       'aria2_safe_mode',
       'aria2_safe_mode_hosts',
       'aria2_completion_notifications',
+      'aria2_filter_extensions',
     ]);
     return {
       rpcUrl: result.aria2_rpc_url || DEFAULT_RPC_URL,
@@ -45,6 +49,7 @@
       safeMode: result.aria2_safe_mode !== false,
       safeModeHosts: result.aria2_safe_mode_hosts || [...DEFAULT_SAFE_MODE_HOSTS],
       completionNotifications: result.aria2_completion_notifications !== false,
+      filterExtensions: result.aria2_filter_extensions || [],
     };
   }
 
@@ -57,6 +62,7 @@
       aria2_safe_mode: config.safeMode,
       aria2_safe_mode_hosts: config.safeModeHosts,
       aria2_completion_notifications: config.completionNotifications,
+      aria2_filter_extensions: config.filterExtensions,
     });
   }
 
@@ -152,6 +158,7 @@
   window.Aria2Shared = {
     DEFAULT_RPC_URL,
     DEFAULT_SAFE_MODE_HOSTS,
+    DEFAULT_FILTER_EXTENSIONS,
     getConfig,
     saveConfig,
     setHijackStatus,

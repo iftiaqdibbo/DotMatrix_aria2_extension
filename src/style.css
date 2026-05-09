@@ -955,6 +955,11 @@ input:focus + .toggle-slider {
     box-shadow: 0 0 4px var(--amber-glow);
 }
 
+.tab-dot--filters {
+    background: var(--accent);
+    box-shadow: 0 0 4px var(--accent-glow);
+}
+
 .options-tab-content .tab-panel {
     display: none;
 }

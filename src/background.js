@@ -94,6 +94,50 @@ function basename(filepath) {
   return result ? result[0] : filepath;
 }
 
+function getFileExtensionFromUrl(url) {
+  try {
+    const pathname = new URL(url).pathname;
+    const match = pathname.match(/\.([a-zA-Z0-9]+)(?:$|[?#])/);
+    return match ? "." + match[1].toLowerCase() : "";
+  } catch {
+    return "";
+  }
+}
+
+async function isUrlFilteredByExtension(url) {
+  if (!url) return false;
+  const ext = getFileExtensionFromUrl(url);
+  if (!ext) return false;
+  const { aria2_filter_extensions } = await chrome.storage.local.get([
+    "aria2_filter_extensions",
+  ]);
+  const filters = aria2_filter_extensions || ARIA2_DEFAULT_FILTER_EXTENSIONS;
+  return filters.some((f) => f.toLowerCase() === ext);
+}
+
+function getFileExtensionFromPath(filepath) {
+  const name = basename(filepath);
+  if (!name) return "";
+  const dotIndex = name.lastIndexOf(".");
+  if (dotIndex <= 0) return "";
+  return name.slice(dotIndex).toLowerCase();
+}
+
+async function isFileFilteredByExtension(item) {
+  const url = item.finalUrl || item.url;
+  if (await isUrlFilteredByExtension(url)) return true;
+  if (item.filename) {
+    const ext = getFileExtensionFromPath(item.filename);
+    if (!ext) return false;
+    const { aria2_filter_extensions } = await chrome.storage.local.get([
+      "aria2_filter_extensions",
+    ]);
+    const filters = aria2_filter_extensions || ARIA2_DEFAULT_FILTER_EXTENSIONS;
+    return filters.some((f) => f.toLowerCase() === ext);
+  }
+  return false;
+}
+
 async function rpcCall(method, params) {
   const { aria2_rpc_url, aria2_rpc_secret } = await chrome.storage.local.get([
     "aria2_rpc_url",
@@ -281,6 +325,7 @@ chrome.runtime.onInstalled.addListener(() => {
       "aria2_safe_mode",
       "aria2_safe_mode_hosts",
       "aria2_completion_notifications",
+      "aria2_filter_extensions",
     ],
     (result) => {
       const defaults = {};
@@ -298,6 +343,9 @@ chrome.runtime.onInstalled.addListener(() => {
       }
       if (result.aria2_completion_notifications === undefined) {
         defaults.aria2_completion_notifications = true;
+      }
+      if (result.aria2_filter_extensions === undefined) {
+        defaults.aria2_filter_extensions = ARIA2_DEFAULT_FILTER_EXTENSIONS;
       }
       if (Object.keys(defaults).length > 0) {
         chrome.storage.local.set(defaults);
@@ -321,6 +369,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const cookieStoreId = tab?.cookieStoreId;
     const cookies = await getCookiesForUrls([referer, ...urls], cookieStoreId);
     for (const url of urls) {
+      if (await isUrlFilteredByExtension(url)) {
+        console.log("[Aria2] Skipping filtered URL from context menu:", url);
+        continue;
+      }
       try {
         await addUriToAria2(url, referer, cookies);
         showNotification("aria2", "Download added successfully");
@@ -345,12 +397,20 @@ async function removeDownloadItemCompletely(downloadItem) {
   } catch {}
 }
 
-function downloadMustBeCaptured(item, referrer, settings) {
+async function downloadMustBeCaptured(item, referrer, settings) {
   if (!settings.aria2_hijack_downloads) {
     return false;
   }
 
   const url = item.finalUrl || item.url;
+
+  if (await isFileFilteredByExtension(item)) {
+    console.log(
+      "[Aria2] Skipping download - file extension is filtered:",
+      url,
+    );
+    return false;
+  }
 
   try {
     const urlObj = new URL(url);
@@ -410,6 +470,10 @@ async function getSafeModeOptions(url) {
 async function captureDownloadItem(item, referer, cookies) {
   const url = item.finalUrl || item.url;
   const filename = basename(item.filename);
+  if (filename && (await isUrlFilteredByExtension(filename))) {
+    console.log("[Aria2] Skipping capture - filename extension is filtered:", filename);
+    return;
+  }
   const extraOptions = await getSafeModeOptions(url);
   await addUriToAria2(url, referer, cookies, filename, null, extraOptions);
 }
@@ -419,7 +483,7 @@ async function handleDownload(downloadItem, handler) {
     return;
   }
   const settings = await chrome.storage.local.get(["aria2_hijack_downloads"]);
-  if (!downloadMustBeCaptured(downloadItem, downloadItem.referrer, settings)) {
+  if (!(await downloadMustBeCaptured(downloadItem, downloadItem.referrer, settings))) {
     return;
   }
 
@@ -506,9 +570,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "ADD_DOWNLOAD") {
     const referer = request.referrer ?? "";
     const url = request.url;
-    getCookiesForUrls([referer, url])
-      .then((cookies) => addUriToAria2(url, referer, cookies))
-      .then((result) => sendResponse({ success: true, gid: result }))
+    isUrlFilteredByExtension(url)
+      .then((filtered) => {
+        if (filtered) {
+          sendResponse({ success: false, error: "File extension is filtered" });
+          return;
+        }
+        return getCookiesForUrls([referer, url]).then((cookies) =>
+          addUriToAria2(url, referer, cookies),
+        );
+      })
+      .then((result) => {
+        if (result) sendResponse({ success: true, gid: result });
+      })
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
@@ -527,14 +601,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       siteName,
     );
 
-    getSafeModeOptions(url)
-      .then((extraOptions) => {
-        return getCookiesForUrls([referer, url], cookieStoreId).then(
-          (cookies) =>
+    isUrlFilteredByExtension(url)
+      .then((filtered) => {
+        if (filtered) {
+          console.log("[Aria2] Skipping filtered URL:", url);
+          sendResponse({ success: false, error: "File extension is filtered" });
+          return;
+        }
+        return getSafeModeOptions(url).then((extraOptions) =>
+          getCookiesForUrls([referer, url], cookieStoreId).then((cookies) =>
             addUriToAria2(url, referer, cookies, null, null, extraOptions),
+          ),
         );
       })
-      .then((result) => sendResponse({ success: true, gid: result }))
+      .then((result) => {
+        if (result) sendResponse({ success: true, gid: result });
+      })
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }

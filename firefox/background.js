@@ -64,6 +64,50 @@ function basename(filepath) {
   return result ? result[0] : filepath;
 }
 
+function getFileExtensionFromUrl(url) {
+  try {
+    const pathname = new URL(url).pathname;
+    const match = pathname.match(/\.([a-zA-Z0-9]+)(?:$|[?#])/);
+    return match ? "." + match[1].toLowerCase() : "";
+  } catch {
+    return "";
+  }
+}
+
+async function isUrlFilteredByExtension(url) {
+  if (!url) return false;
+  const ext = getFileExtensionFromUrl(url);
+  if (!ext) return false;
+  const { aria2_filter_extensions } = await api.storage.local.get([
+    "aria2_filter_extensions",
+  ]);
+  const filters = aria2_filter_extensions || ARIA2_DEFAULT_FILTER_EXTENSIONS;
+  return filters.some((f) => f.toLowerCase() === ext);
+}
+
+function getFileExtensionFromPath(filepath) {
+  const name = basename(filepath);
+  if (!name) return "";
+  const dotIndex = name.lastIndexOf(".");
+  if (dotIndex <= 0) return "";
+  return name.slice(dotIndex).toLowerCase();
+}
+
+async function isFileFilteredByExtension(item) {
+  const url = item.finalUrl || item.url;
+  if (await isUrlFilteredByExtension(url)) return true;
+  if (item.filename) {
+    const ext = getFileExtensionFromPath(item.filename);
+    if (!ext) return false;
+    const { aria2_filter_extensions } = await api.storage.local.get([
+      "aria2_filter_extensions",
+    ]);
+    const filters = aria2_filter_extensions || ARIA2_DEFAULT_FILTER_EXTENSIONS;
+    return filters.some((f) => f.toLowerCase() === ext);
+  }
+  return false;
+}
+
 async function rpcCall(method, params) {
   const { aria2_rpc_url, aria2_rpc_secret } = await api.storage.local.get([
     "aria2_rpc_url",
@@ -246,6 +290,7 @@ api.runtime.onInstalled.addListener(async () => {
     "aria2_safe_mode",
     "aria2_safe_mode_hosts",
     "aria2_completion_notifications",
+    "aria2_filter_extensions",
   ]);
   const defaults = {};
   if (!result.aria2_rpc_url) {
@@ -262,6 +307,9 @@ api.runtime.onInstalled.addListener(async () => {
   }
   if (result.aria2_completion_notifications === undefined) {
     defaults.aria2_completion_notifications = true;
+  }
+  if (result.aria2_filter_extensions === undefined) {
+    defaults.aria2_filter_extensions = ARIA2_DEFAULT_FILTER_EXTENSIONS;
   }
   if (Object.keys(defaults).length > 0) {
     await api.storage.local.set(defaults);
@@ -283,6 +331,10 @@ api.contextMenus.onClicked.addListener(async (info, tab) => {
     const cookieStoreId = tab?.cookieStoreId;
     const cookies = await getCookiesForUrls([referer, ...urls], cookieStoreId);
     for (const url of urls) {
+      if (await isUrlFilteredByExtension(url)) {
+        console.log("[Aria2] Skipping filtered URL from context menu:", url);
+        continue;
+      }
       try {
         await addUriToAria2(url, referer, cookies);
         showNotification("aria2", "Download added successfully");
@@ -307,12 +359,20 @@ async function removeDownloadItemCompletely(downloadItem) {
   } catch {}
 }
 
-function downloadMustBeCaptured(item, referrer, settings) {
+async function downloadMustBeCaptured(item, referrer, settings) {
   if (!settings.aria2_hijack_downloads) {
     return false;
   }
 
   const url = item.finalUrl || item.url;
+
+  if (await isFileFilteredByExtension(item)) {
+    console.log(
+      "[Aria2] Skipping download - file extension is filtered:",
+      url,
+    );
+    return false;
+  }
 
   try {
     const urlObj = new URL(url);
@@ -372,6 +432,10 @@ async function getSafeModeOptions(url) {
 async function captureDownloadItem(item, referer, cookies) {
   const url = item.finalUrl || item.url;
   const filename = item.filename ? basename(item.filename) : "";
+  if (filename && (await isUrlFilteredByExtension(filename))) {
+    console.log("[Aria2] Skipping capture - filename extension is filtered:", filename);
+    return;
+  }
   const extraOptions = await getSafeModeOptions(url);
   await addUriToAria2(url, referer, cookies, filename, null, extraOptions);
 }
@@ -381,7 +445,7 @@ async function handleDownload(downloadItem, handler) {
     return;
   }
   const settings = await api.storage.local.get(["aria2_hijack_downloads"]);
-  if (!downloadMustBeCaptured(downloadItem, downloadItem.referrer, settings)) {
+  if (!(await downloadMustBeCaptured(downloadItem, downloadItem.referrer, settings))) {
     return;
   }
 
@@ -425,6 +489,10 @@ api.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const url = request.url;
     (async () => {
       try {
+        if (await isUrlFilteredByExtension(url)) {
+          sendResponse({ success: false, error: "File extension is filtered" });
+          return;
+        }
         const cookies = await getCookiesForUrls([referer, url]);
         const result = await addUriToAria2(url, referer, cookies);
         sendResponse({ success: true, gid: result });
@@ -451,6 +519,11 @@ api.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     (async () => {
       try {
+        if (await isUrlFilteredByExtension(url)) {
+          console.log("[Aria2] Skipping filtered URL:", url);
+          sendResponse({ success: false, error: "File extension is filtered" });
+          return;
+        }
         const extraOptions = await getSafeModeOptions(url);
         const cookies = await getCookiesForUrls([referer, url], cookieStoreId);
         const result = await addUriToAria2(
