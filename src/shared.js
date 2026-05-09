@@ -35,6 +35,7 @@
       'aria2_hijack_downloads',
       'aria2_safe_mode',
       'aria2_safe_mode_hosts',
+      'aria2_completion_notifications',
     ]);
     return {
       rpcUrl: result.aria2_rpc_url || DEFAULT_RPC_URL,
@@ -43,6 +44,7 @@
       hijackDownloads: result.aria2_hijack_downloads || false,
       safeMode: result.aria2_safe_mode !== false,
       safeModeHosts: result.aria2_safe_mode_hosts || [...DEFAULT_SAFE_MODE_HOSTS],
+      completionNotifications: result.aria2_completion_notifications !== false,
     };
   }
 
@@ -54,6 +56,7 @@
       aria2_hijack_downloads: config.hijackDownloads,
       aria2_safe_mode: config.safeMode,
       aria2_safe_mode_hosts: config.safeModeHosts,
+      aria2_completion_notifications: config.completionNotifications,
     });
   }
 
@@ -108,6 +111,7 @@
     const tellKeys = [
       'gid', 'status', 'totalLength', 'completedLength',
       'downloadSpeed', 'uploadSpeed', 'files', 'connections',
+      'completedTime',
     ];
     const [globalStat, active, waiting, stopped] = await Promise.all([
       callAria2('aria2.getGlobalStat'),
@@ -127,7 +131,8 @@
   }
 
   function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
+    const n = parseInt(bytes, 10);
+    if (isNaN(n) || n === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));

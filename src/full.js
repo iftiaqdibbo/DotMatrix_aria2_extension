@@ -43,6 +43,19 @@
     return callAria2("aria2.changePosition", [gid, pos, how]);
   }
 
+  function formatCompletedTime(unixSeconds) {
+    const date = new Date(parseInt(unixSeconds, 10) * 1000);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffDays === 0) {
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    if (diffDays === 1) return "yesterday " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (diffDays < 7) return diffDays + "d ago";
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
   function FullApp() {
     const POLL_FAST_MS = 1000;
     const POLL_IDLE_MS = 2500;
@@ -56,6 +69,7 @@
       error: null,
       showSettings: false,
       pollTimeout: null,
+      searchQuery: "",
     };
 
     // DOM element references for updates
@@ -189,6 +203,21 @@
       const mainContent = document.createElement("div");
       mainContent.className = "main-content";
 
+      const searchBar = document.createElement("div");
+      searchBar.className = "search-bar";
+      searchBar.innerHTML = `
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" placeholder="filter downloads..." id="search-input" value="${escapeHtml(state.searchQuery)}">
+      `;
+      const searchInput = searchBar.querySelector("#search-input");
+      searchInput.addEventListener("input", (e) => {
+        state.searchQuery = e.target.value;
+        updateDownloadList();
+      });
+
       const tabs = document.createElement("div");
       tabs.className = "tabs";
       ["active", "waiting", "stopped"].forEach((tab) => {
@@ -213,6 +242,7 @@
       downloadList.className = "download-list";
       uiRefs.downloadList = downloadList;
 
+      mainContent.appendChild(searchBar);
       mainContent.appendChild(tabs);
       mainContent.appendChild(downloadList);
 
@@ -255,9 +285,16 @@
     }
 
     function updateDownloadList() {
-      const downloads = state.downloads[state.activeTab] || [];
+      let downloads = state.downloads[state.activeTab] || [];
       const listEl = uiRefs.downloadList;
       if (!listEl) return;
+
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        downloads = downloads.filter((d) =>
+          getFileName(d).toLowerCase().includes(q),
+        );
+      }
 
       if (downloads.length === 0) {
         if (listEl.dataset.empty !== "true") {
@@ -347,11 +384,21 @@
         `status-badge status-badge--${download.status}`;
 
       const details = row.querySelector(".download-details");
-      details.innerHTML = `
-      <span><strong>${formatBytes(completed)}</strong> / ${formatBytes(total)}</span>
+      const completedTime = download.completedTime
+        ? formatCompletedTime(download.completedTime)
+        : null;
+      let detailsHTML = `
+      <span><strong>${formatBytes(completed)}</strong> / ${formatBytes(total)}</span>`;
+      if (download.status === "active") {
+        detailsHTML += `
       <span>speed: <strong>${formatSpeed(speed)}</strong></span>
-      <span>connections: <strong>${download.connections}</strong></span>
-    `;
+      <span>connections: <strong>${download.connections}</strong></span>`;
+      }
+      if (completedTime) {
+        detailsHTML += `
+      <span>completed: <strong>${completedTime}</strong></span>`;
+      }
+      details.innerHTML = detailsHTML;
 
       // Update progress bar
       const progressBar = row.querySelector(".dot-progress");
@@ -550,15 +597,28 @@
         progressBar.appendChild(dot);
       }
 
+      const completedTime = download.completedTime
+        ? formatCompletedTime(download.completedTime)
+        : null;
+      let detailsHTML = `
+        <span><strong>${formatBytes(completed)}</strong> / ${formatBytes(total)}</span>`;
+      if (download.status === "active") {
+        detailsHTML += `
+        <span>speed: <strong>${formatSpeed(speed)}</strong></span>
+        <span>connections: <strong>${download.connections}</strong></span>`;
+      }
+      if (completedTime) {
+        detailsHTML += `
+        <span>completed: <strong>${completedTime}</strong></span>`;
+      }
+
       row.innerHTML = `
       <div class="download-row-header">
         <span class="download-title">${escapeHtml(getFileName(download))}</span>
         <span class="status-badge status-badge--${download.status}">${download.status}</span>
       </div>
       <div class="download-details">
-        <span><strong>${formatBytes(completed)}</strong> / ${formatBytes(total)}</span>
-        <span>speed: <strong>${formatSpeed(speed)}</strong></span>
-        <span>connections: <strong>${download.connections}</strong></span>
+        ${detailsHTML}
       </div>
     `;
 
@@ -657,9 +717,9 @@
           else if (className === "btn-stop") await stopDownload(gid);
           else if (className === "btn-delete") await removeDownload(gid);
           else if (className === "btn-move-up")
-            await moveDownload(gid, -1, "POS_SET");
+            await moveDownload(gid, -1, "POS_CUR");
           else if (className === "btn-move-down")
-            await moveDownload(gid, 1, "POS_SET");
+            await moveDownload(gid, 1, "POS_CUR");
           await loadData();
         } catch (err) {
           console.error("Action failed:", err);

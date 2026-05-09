@@ -125,6 +125,20 @@ function OptionsApp(embedded) {
           >
           <span class="input-hint">Default directory for new downloads (optional)</span>
         </div>
+
+        <div class="form-group">
+          <div class="hijack-toggle-row" style="margin-bottom: 8px;">
+            <div class="hijack-info">
+              <span class="hijack-label">Completion Notifications</span>
+              <span class="hijack-desc">Show notification when a download finishes</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="completion-notif-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <span class="input-hint">When enabled, a desktop notification will appear for each completed download</span>
+        </div>
       </section>
 
       <div class="divider"></div>
@@ -288,6 +302,7 @@ function OptionsApp(embedded) {
     container.querySelector('#download-path').value = config.downloadPath;
     container.querySelector('#hijack-toggle').checked = config.hijackDownloads;
     container.querySelector('#safe-mode-toggle').checked = config.safeMode;
+    container.querySelector('#completion-notif-toggle').checked = config.completionNotifications;
 
     renderHostsList();
 
@@ -323,6 +338,7 @@ function OptionsApp(embedded) {
         hijackDownloads: container.querySelector('#hijack-toggle').checked,
         safeMode: container.querySelector('#safe-mode-toggle').checked,
         safeModeHosts: currentHosts,
+        completionNotifications: container.querySelector('#completion-notif-toggle').checked,
       });
       
       testResult.textContent = 'settings saved!';

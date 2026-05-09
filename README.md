@@ -48,7 +48,7 @@ A browser extension for managing aria2 downloads with a sleek dot-matrix aesthet
 
 1. Download a version from release
 2. Extract it
-3. From step 2-5 from above
+3. Follow steps 2-5 from above
 
 ## Install aria2
 

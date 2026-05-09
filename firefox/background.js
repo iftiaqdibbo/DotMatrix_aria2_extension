@@ -4,6 +4,9 @@ const api = typeof browser !== "undefined" ? browser : chrome;
 
 const capturedIds = new Set();
 const interceptedUrls = new Set();
+const knownCompletedGids = new Set();
+const retriedWithSafeMode = new Set();
+const COMPLETED_TRACKING_MAX = 200;
 
 function formatCookies(cookies) {
   if (!cookies) return "";
@@ -103,6 +106,68 @@ async function updateBadgeFromAria2() {
     });
     api.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
     nextDelayMs = activeCount > 0 ? 2000 : 5000;
+
+    const tellKeys = [
+      "gid", "status", "totalLength", "completedLength",
+      "files", "completedTime", "errorCode",
+    ];
+    const stopped = await rpcCall("aria2.tellStopped", [0, 5, tellKeys]);
+    const completed = stopped.filter((d) => d.status === "complete");
+    for (const d of completed) {
+      if (knownCompletedGids.has(d.gid)) continue;
+      knownCompletedGids.add(d.gid);
+      if (knownCompletedGids.size > COMPLETED_TRACKING_MAX) {
+        const iterator = knownCompletedGids.values();
+        knownCompletedGids.delete(iterator.next().value);
+      }
+
+      const { aria2_completion_notifications } = await api.storage.local.get([
+        "aria2_completion_notifications",
+      ]);
+      if (aria2_completion_notifications !== false) {
+        const filename = d.files?.[0]?.path
+          ? basename(d.files[0].path)
+          : d.gid;
+        showNotification(
+          "Download Complete",
+          filename + " has finished downloading",
+        );
+      }
+    }
+
+    const failed = stopped.filter(
+      (d) =>
+        d.status === "error" &&
+        d.errorCode &&
+        d.errorCode !== "0" &&
+        !retriedWithSafeMode.has(d.gid) &&
+        d.files?.[0]?.uris?.[0]?.uri,
+    );
+    for (const d of failed) {
+      retriedWithSafeMode.add(d.gid);
+      const url = d.files[0].uris[0].uri;
+      const filename = d.files[0].path ? basename(d.files[0].path) : d.gid;
+      try {
+        const options = {
+          "max-connection-per-server": "1",
+          split: "1",
+          "enable-http-pipelining": "false",
+        };
+        const { aria2_default_download_path } = await api.storage.local.get([
+          "aria2_default_download_path",
+        ]);
+        if (aria2_default_download_path) {
+          options.dir = aria2_default_download_path;
+        }
+        await rpcCall("aria2.addUri", [[url], options]);
+        showNotification(
+          "aria2",
+          "Retrying with safe mode: " + filename,
+        );
+      } catch (err) {
+        console.error("Failed safe mode retry for", filename, err);
+      }
+    }
   } catch {
     nextDelayMs = 10000;
   }
@@ -180,6 +245,7 @@ api.runtime.onInstalled.addListener(async () => {
     "aria2_hijack_downloads",
     "aria2_safe_mode",
     "aria2_safe_mode_hosts",
+    "aria2_completion_notifications",
   ]);
   const defaults = {};
   if (!result.aria2_rpc_url) {
@@ -193,6 +259,9 @@ api.runtime.onInstalled.addListener(async () => {
   }
   if (result.aria2_safe_mode_hosts === undefined) {
     defaults.aria2_safe_mode_hosts = ARIA2_DEFAULT_SAFE_MODE_HOSTS;
+  }
+  if (result.aria2_completion_notifications === undefined) {
+    defaults.aria2_completion_notifications = true;
   }
   if (Object.keys(defaults).length > 0) {
     await api.storage.local.set(defaults);

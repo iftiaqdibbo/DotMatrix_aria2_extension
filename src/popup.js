@@ -157,8 +157,11 @@
         const listEl = document.getElementById("downloads-list");
         if (listEl) {
           const allDownloads = [...active, ...waiting.slice(0, 6)];
+          const recentCompleted = stopped
+            .filter((d) => d.status === "complete")
+            .slice(0, 2);
 
-          if (allDownloads.length === 0) {
+          if (allDownloads.length === 0 && recentCompleted.length === 0) {
             listEl.innerHTML = `
             <div class="empty-downloads">
               <div class="empty-downloads-dots">
@@ -195,6 +198,23 @@
               }
               listEl.appendChild(row);
             });
+
+            if (recentCompleted.length > 0) {
+              const sep = document.createElement("div");
+              sep.className = "recent-header";
+              sep.innerHTML =
+                '<span class="recent-header-dot"></span>recent<span class="recent-header-dot"></span>';
+              listEl.appendChild(sep);
+              recentCompleted.forEach((d, i) => {
+                const row = createRecentRow(d);
+                if (existingGids.has(d.gid)) {
+                  row.style.animation = "none";
+                } else {
+                  row.style.animationDelay = `${(allDownloads.length + i) * 0.04}s`;
+                }
+                listEl.appendChild(row);
+              });
+            }
           }
         }
 
@@ -309,14 +329,65 @@
             else if (btn.classList.contains("btn-delete"))
               await removeDownload(gid);
             else if (btn.classList.contains("btn-move-up"))
-              await moveDownload(gid, -1, "POS_SET");
+              await moveDownload(gid, -1, "POS_CUR");
             else if (btn.classList.contains("btn-move-down"))
-              await moveDownload(gid, 1, "POS_SET");
+              await moveDownload(gid, 1, "POS_CUR");
             await loadData();
           } catch (err) {
             console.error("Action failed:", err);
           }
         });
+      });
+
+      return row;
+    }
+
+    function createRecentRow(download) {
+      const total = parseInt(download.totalLength) || 1;
+      const completed = parseInt(download.completedLength);
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+      const completedTime = download.completedTime
+        ? (() => {
+            const date = new Date(parseInt(download.completedTime, 10) * 1000);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / 86400000);
+            if (diffDays === 0) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            if (diffDays === 1) return "yesterday";
+            return diffDays + "d ago";
+          })()
+        : "";
+
+      const row = document.createElement("div");
+      row.className = "download-item popup-item";
+      row.innerHTML = `
+      <div class="download-row-content">
+        <div class="download-info">
+          <div class="download-name" title="${escapeHtml(getFileName(download))}">${escapeHtml(getFileName(download))}</div>
+          <div class="download-meta">
+            <span class="status-badge status-complete">complete</span>
+            ${completedTime ? `<span class="recent-time">${completedTime}</span>` : ""}
+            <span class="download-size">${formatBytes(total)}</span>
+          </div>
+        </div>
+        <div class="download-actions-compact">
+          <button class="btn-action-icon btn-delete" data-gid="${download.gid}" title="Remove">🗑</button>
+        </div>
+      </div>
+      <div class="download-progress">
+        ${renderDotProgress(percent)}
+        <span class="progress-text">${percent}%</span>
+      </div>
+    `;
+
+      row.querySelector(".btn-delete").addEventListener("click", async (e) => {
+        e.stopPropagation();
+        try {
+          await removeDownload(download.gid);
+          await loadData();
+        } catch (err) {
+          console.error("Remove failed:", err);
+        }
       });
 
       return row;
