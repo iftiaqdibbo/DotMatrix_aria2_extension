@@ -33,3 +33,11 @@ const ARIA2_DEFAULT_SAFE_MODE_HOSTS = [
   "filebin.net",
   "oshi.at",
 ];
+
+const ARIA2_THEMES = [
+  { id: "original", name: "Original", accent: "#ff1a1a" },
+  { id: "catppuccin", name: "Catppuccin", accent: "#f38ba8" },
+  { id: "dracula", name: "Dracula", accent: "#ff79c6" },
+  { id: "nord", name: "Nord", accent: "#88c0d0" },
+  { id: "tokyo-night", name: "Tokyo Night", accent: "#7aa2f7" },
+];

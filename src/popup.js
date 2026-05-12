@@ -8,6 +8,7 @@
     formatBytes,
     formatSpeed,
     escapeHtml,
+    applyTheme,
   } = window.Aria2Shared;
 
   async function pauseDownload(gid) {
@@ -404,6 +405,7 @@
     }
 
     container.addEventListener("mount", async () => {
+      await applyTheme();
       const config = await getConfig();
       document.getElementById("hijack-toggle").checked = config.hijackDownloads;
 

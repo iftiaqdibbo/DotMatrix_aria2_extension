@@ -5,6 +5,7 @@ const {
   saveConfig,
   testConnectionWithParams,
   escapeHtml,
+  applyTheme,
 } = window.Aria2Shared;
 
 function OptionsApp(embedded) {
@@ -167,6 +168,25 @@ function OptionsApp(embedded) {
             </label>
           </div>
           <span class="input-hint">When enabled, all file downloads will be redirected to aria2</span>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <section class="settings-section">
+        <h2 class="section-title">
+          <span class="dot-indicator"></span>
+          theme
+        </h2>
+
+        <div class="form-group">
+          <label for="theme-select">Color Scheme</label>
+          <div class="theme-select-wrapper">
+            <select id="theme-select" class="input theme-select">
+            </select>
+            <div class="theme-swatch" id="theme-swatch"></div>
+          </div>
+          <span class="input-hint">Changes apply instantly after saving</span>
         </div>
       </section>
 
@@ -363,6 +383,7 @@ function OptionsApp(embedded) {
   });
 
   container.addEventListener('mount', async () => {
+    await applyTheme();
     const config = await getConfig();
     currentHosts = [...config.safeModeHosts];
     currentFilters = [...config.filterExtensions];
@@ -373,6 +394,20 @@ function OptionsApp(embedded) {
     container.querySelector('#hijack-toggle').checked = config.hijackDownloads;
     container.querySelector('#safe-mode-toggle').checked = config.safeMode;
     container.querySelector('#completion-notif-toggle').checked = config.completionNotifications;
+
+    const themeSelect = container.querySelector('#theme-select');
+    const themeSwatch = container.querySelector('#theme-swatch');
+    themeSelect.innerHTML = ARIA2_THEMES.map(
+      (t) => `<option value="${t.id}" ${t.id === config.theme ? 'selected' : ''}>${t.name}</option>`,
+    ).join('');
+    themeSwatch.style.background = (ARIA2_THEMES.find((t) => t.id === config.theme) || ARIA2_THEMES[0]).accent;
+    themeSelect.addEventListener('change', () => {
+      const t = ARIA2_THEMES.find((th) => th.id === themeSelect.value);
+      if (t) {
+        themeSwatch.style.background = t.accent;
+        applyTheme(themeSelect.value);
+      }
+    });
 
     renderHostsList();
     renderFiltersList();
@@ -404,6 +439,7 @@ function OptionsApp(embedded) {
     });
 
     saveBtn.addEventListener('click', async () => {
+      const selectedTheme = container.querySelector('#theme-select').value;
       await saveConfig({
         rpcUrl: container.querySelector('#rpc-url').value.trim(),
         secret: container.querySelector('#rpc-secret').value.trim(),
@@ -413,7 +449,9 @@ function OptionsApp(embedded) {
         safeModeHosts: currentHosts,
         completionNotifications: container.querySelector('#completion-notif-toggle').checked,
         filterExtensions: currentFilters,
+        theme: selectedTheme,
       });
+      await applyTheme(selectedTheme);
       
       testResult.textContent = 'settings saved!';
       testResult.className = 'test-result success';
@@ -492,6 +530,11 @@ function OptionsApp(embedded) {
       if (area === 'local' && changes.aria2_filter_extensions) {
         currentFilters = changes.aria2_filter_extensions.newValue || [];
         renderFiltersList();
+      }
+      if (area === 'local' && changes.aria2_theme) {
+        const newTheme = changes.aria2_theme.newValue || 'original';
+        const t = ARIA2_THEMES.find((th) => th.id === newTheme);
+        if (t) themeSwatch.style.background = t.accent;
       }
     });
   });

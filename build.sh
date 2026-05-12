@@ -18,13 +18,11 @@ zip -r "$DIST_DIR/aria2-dashboard-chrome.zip" \
 echo "Packaging Firefox extension..."
 TMP_DIR=$(mktemp -d)
 cp "$ROOT_DIR/firefox/manifest.json" "$TMP_DIR/"
-cp "$ROOT_DIR/firefox/background.js" "$TMP_DIR/"
 cp -r "$ROOT_DIR/src" "$TMP_DIR/src"
 cp -r "$ROOT_DIR/firefox/icons" "$TMP_DIR/icons"
 cd "$TMP_DIR"
 zip -r "$ROOT_DIR/$DIST_DIR/aria2-dashboard-firefox.zip" \
   manifest.json \
-  background.js \
   src/ \
   icons/ \
   -x "*.DS_Store"

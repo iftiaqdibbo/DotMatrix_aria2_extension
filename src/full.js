@@ -7,6 +7,7 @@
     formatBytes,
     formatSpeed,
     escapeHtml,
+    applyTheme,
   } = window.Aria2Shared;
 
   async function addDownload(urls, options = {}) {
@@ -814,7 +815,8 @@
       }
     }
 
-    container.addEventListener("mount", () => {
+    container.addEventListener("mount", async () => {
+      await applyTheme();
       attachHeaderListeners();
       startPolling();
     });

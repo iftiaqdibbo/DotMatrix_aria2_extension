@@ -54,7 +54,7 @@ if (Test-Path $aria2Exe) {
     Write-Info "Extracting..."
     New-Item -ItemType Directory -Force -Path $aria2Dir | Out-Null
 
-    $topDir = (Get-ChildItem (Join-Path "/tmp" "aria2-extract") -ErrorAction SilentlyContinue)
+    $topDir = (Get-ChildItem (Join-Path $env:TEMP "aria2-extract") -ErrorAction SilentlyContinue)
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = [System.IO.Compression.ZipFile]::OpenRead($zipFile)
     $topFolder = $archive.Entries[0].FullName.Split('/')[0]

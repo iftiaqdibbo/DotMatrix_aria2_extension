@@ -202,3 +202,97 @@
     background: var(--bg);
     color: var(--text);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME OVERRIDES
+   Each theme overrides the semantic color tokens.
+   Set via `document.documentElement.setAttribute("data-theme", "...")`.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Catppuccin Mocha ────────────────────────────────────────────────────── */
+[data-theme="catppuccin"] {
+    --accent: #f38ba8;
+    --accent-bright: #f5a0b8;
+    --accent-dim: rgba(243, 139, 168, 0.08);
+    --accent-glow: rgba(243, 139, 168, 0.25);
+    --accent-glow-soft: rgba(243, 139, 168, 0.15);
+    --accent-glow-mid: rgba(243, 139, 168, 0.35);
+    --accent-glow-hard: rgba(243, 139, 168, 0.45);
+
+    --red: #f38ba8;
+    --red-dim: rgba(243, 139, 168, 0.08);
+
+    --amber: #fab387;
+    --amber-dim: rgba(250, 179, 135, 0.08);
+    --amber-glow: rgba(250, 179, 135, 0.3);
+
+    --green: #a6e3a1;
+    --green-dim: rgba(166, 227, 161, 0.08);
+    --green-glow: rgba(166, 227, 161, 0.3);
+}
+
+/* ── Dracula ─────────────────────────────────────────────────────────────── */
+[data-theme="dracula"] {
+    --accent: #ff79c6;
+    --accent-bright: #ff92d0;
+    --accent-dim: rgba(255, 121, 198, 0.08);
+    --accent-glow: rgba(255, 121, 198, 0.25);
+    --accent-glow-soft: rgba(255, 121, 198, 0.15);
+    --accent-glow-mid: rgba(255, 121, 198, 0.35);
+    --accent-glow-hard: rgba(255, 121, 198, 0.45);
+
+    --red: #ff5555;
+    --red-dim: rgba(255, 85, 85, 0.08);
+
+    --amber: #f1fa8c;
+    --amber-dim: rgba(241, 250, 140, 0.08);
+    --amber-glow: rgba(241, 250, 140, 0.3);
+
+    --green: #50fa7b;
+    --green-dim: rgba(80, 250, 123, 0.08);
+    --green-glow: rgba(80, 250, 123, 0.3);
+}
+
+/* ── Nord ────────────────────────────────────────────────────────────────── */
+[data-theme="nord"] {
+    --accent: #88c0d0;
+    --accent-bright: #8fc1d0;
+    --accent-dim: rgba(136, 192, 208, 0.08);
+    --accent-glow: rgba(136, 192, 208, 0.25);
+    --accent-glow-soft: rgba(136, 192, 208, 0.15);
+    --accent-glow-mid: rgba(136, 192, 208, 0.35);
+    --accent-glow-hard: rgba(136, 192, 208, 0.45);
+
+    --red: #bf616a;
+    --red-dim: rgba(191, 97, 106, 0.08);
+
+    --amber: #ebcb8b;
+    --amber-dim: rgba(235, 203, 139, 0.08);
+    --amber-glow: rgba(235, 203, 139, 0.3);
+
+    --green: #a3be8c;
+    --green-dim: rgba(163, 190, 140, 0.08);
+    --green-glow: rgba(163, 190, 140, 0.3);
+}
+
+/* ── Tokyo Night ─────────────────────────────────────────────────────────── */
+[data-theme="tokyo-night"] {
+    --accent: #7aa2f7;
+    --accent-bright: #8ab4f8;
+    --accent-dim: rgba(122, 162, 247, 0.08);
+    --accent-glow: rgba(122, 162, 247, 0.25);
+    --accent-glow-soft: rgba(122, 162, 247, 0.15);
+    --accent-glow-mid: rgba(122, 162, 247, 0.35);
+    --accent-glow-hard: rgba(122, 162, 247, 0.45);
+
+    --red: #f7768e;
+    --red-dim: rgba(247, 118, 142, 0.08);
+
+    --amber: #e0af68;
+    --amber-dim: rgba(224, 175, 104, 0.08);
+    --amber-glow: rgba(224, 175, 104, 0.3);
+
+    --green: #9ece6a;
+    --green-dim: rgba(158, 206, 106, 0.08);
+    --green-glow: rgba(158, 206, 106, 0.3);
+}

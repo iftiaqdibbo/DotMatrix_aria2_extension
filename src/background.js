@@ -1,4 +1,6 @@
-importScripts("constants.js");
+if (typeof ARIA2_DEFAULT_RPC_URL === "undefined") {
+  importScripts("constants.js");
+}
 
 const BADGE_COLOR = "#ff1a1a";
 
@@ -9,26 +11,47 @@ const interceptedUrls = new Set();
 const knownCompletedGids = new Set();
 const retriedWithSafeMode = new Set();
 const COMPLETED_TRACKING_MAX = 200;
+const SESSION_KEY = "aria2_pending_downloads";
 
-function trackDownloadItem(id, item) {
+function isFirefox() {
+  return typeof chrome.downloads.onDeterminingFilename !== "undefined";
+}
+
+async function trackDownloadItem(id, item) {
   downloadItems[id] = item;
   setTimeout(() => {
     if (downloadItems[id]) {
       delete downloadItems[id];
     }
   }, DOWNLOAD_ITEM_TTL);
+
+  try {
+    const data = await chrome.storage.session.get(SESSION_KEY);
+    const items = data[SESSION_KEY] || {};
+    items[id] = {
+      url: item.url,
+      referrer: item.referrer,
+      filename: item.filename,
+      finalUrl: item.finalUrl,
+      _ts: Date.now(),
+    };
+    await chrome.storage.session.set({ [SESSION_KEY]: items });
+  } catch {}
 }
 
-function isChromium() {
-  return (
-    typeof chrome !== "undefined" &&
-    chrome.downloads &&
-    typeof chrome.downloads.onDeterminingFilename !== "undefined"
-  );
-}
-
-function isFirefox() {
-  return !isChromium();
+async function recoverDownloadItem(id) {
+  if (downloadItems[id]) return downloadItems[id];
+  try {
+    const data = await chrome.storage.session.get(SESSION_KEY);
+    const items = data[SESSION_KEY] || {};
+    const raw = items[id];
+    if (raw && Date.now() - raw._ts < DOWNLOAD_ITEM_TTL) {
+      const item = { id, url: raw.url, referrer: raw.referrer, filename: raw.filename, finalUrl: raw.finalUrl };
+      downloadItems[id] = item;
+      return item;
+    }
+  } catch {}
+  return null;
 }
 
 function formatCookies(cookies) {
@@ -326,6 +349,7 @@ chrome.runtime.onInstalled.addListener(() => {
       "aria2_safe_mode_hosts",
       "aria2_completion_notifications",
       "aria2_filter_extensions",
+      "aria2_theme",
     ],
     (result) => {
       const defaults = {};
@@ -346,6 +370,9 @@ chrome.runtime.onInstalled.addListener(() => {
       }
       if (result.aria2_filter_extensions === undefined) {
         defaults.aria2_filter_extensions = ARIA2_DEFAULT_FILTER_EXTENSIONS;
+      }
+      if (!result.aria2_theme) {
+        defaults.aria2_theme = "original";
       }
       if (Object.keys(defaults).length > 0) {
         chrome.storage.local.set(defaults);
@@ -504,9 +531,12 @@ async function handleDownload(downloadItem, handler) {
   handler(downloadItem, referrer, cookies);
 }
 
-if (isChromium() && chrome.downloads.onChanged) {
+if (chrome.downloads.onChanged) {
   chrome.downloads.onChanged.addListener(async (downloadDelta) => {
-    const downloadItem = downloadItems[downloadDelta.id];
+    let downloadItem = downloadItems[downloadDelta.id];
+    if (!downloadItem) {
+      downloadItem = await recoverDownloadItem(downloadDelta.id);
+    }
     if (!downloadItem) {
       return;
     }

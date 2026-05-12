@@ -1038,6 +1038,27 @@ input:focus + .toggle-slider {
     width: 100%;
 }
 
+.theme-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.theme-select {
+    flex: 1;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.theme-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+}
+
 .embedded-options-panel {
     padding: 20px;
     max-width: 700px;

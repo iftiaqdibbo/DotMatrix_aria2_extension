@@ -40,6 +40,7 @@
       'aria2_safe_mode_hosts',
       'aria2_completion_notifications',
       'aria2_filter_extensions',
+      'aria2_theme',
     ]);
     return {
       rpcUrl: result.aria2_rpc_url || DEFAULT_RPC_URL,
@@ -50,6 +51,7 @@
       safeModeHosts: result.aria2_safe_mode_hosts || [...DEFAULT_SAFE_MODE_HOSTS],
       completionNotifications: result.aria2_completion_notifications !== false,
       filterExtensions: result.aria2_filter_extensions || [],
+      theme: result.aria2_theme || 'original',
     };
   }
 
@@ -63,11 +65,24 @@
       aria2_safe_mode_hosts: config.safeModeHosts,
       aria2_completion_notifications: config.completionNotifications,
       aria2_filter_extensions: config.filterExtensions,
+      aria2_theme: config.theme || 'original',
     });
   }
 
   async function setHijackStatus(enabled) {
     return storageSet({ aria2_hijack_downloads: enabled });
+  }
+
+  async function applyTheme(theme) {
+    if (!theme) {
+      const result = await storageGet('aria2_theme');
+      theme = result.aria2_theme || 'original';
+    }
+    if (theme === 'original') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
   }
 
   async function callAria2(method, params = []) {
@@ -141,8 +156,8 @@
     if (isNaN(n) || n === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    const i = Math.min(Math.floor(Math.log(n) / Math.log(k)), sizes.length - 1);
+    return parseFloat((n / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 
   function formatSpeed(bytesPerSecond) {
@@ -162,6 +177,7 @@
     getConfig,
     saveConfig,
     setHijackStatus,
+    applyTheme,
     callAria2,
     testConnectionWithParams,
     getAria2Status,
