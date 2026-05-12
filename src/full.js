@@ -829,12 +829,16 @@
     return container;
   }
 
-  const root = document.getElementById("root");
-  const app = FullApp();
-  root.appendChild(app);
-  app.dispatchEvent(new Event("mount"));
+  window.FullApp = FullApp;
 
-  window.addEventListener("beforeunload", () => {
-    app.dispatchEvent(new Event("unmount"));
-  });
+  if (document.title && document.title.includes('Full')) {
+    const root = document.getElementById("root");
+    const app = FullApp();
+    root.appendChild(app);
+    app.dispatchEvent(new Event("mount"));
+
+    window.addEventListener("beforeunload", () => {
+      app.dispatchEvent(new Event("unmount"));
+    });
+  }
 })();

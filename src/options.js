@@ -503,7 +503,25 @@ function OptionsApp(embedded) {
 
     if (openDashboardBtn) {
       openDashboardBtn.addEventListener('click', () => {
-        chrome.tabs.create({ url: chrome.runtime.getURL('src/full.html') });
+        const root = document.getElementById('root');
+        root.innerHTML = '';
+        const app = FullApp();
+        root.appendChild(app);
+        app.dispatchEvent(new Event('mount'));
+
+        const headerActions = app.querySelector('.header-actions');
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn-icon';
+        closeBtn.title = 'Back to Settings';
+        closeBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        closeBtn.addEventListener('click', () => {
+          app.dispatchEvent(new Event('unmount'));
+          root.innerHTML = '';
+          const optionsApp = OptionsApp(false);
+          root.appendChild(optionsApp);
+          optionsApp.dispatchEvent(new Event('mount'));
+        });
+        headerActions.prepend(closeBtn);
       });
     }
 
