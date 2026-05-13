@@ -6,7 +6,9 @@ A browser extension for managing aria2 downloads with a sleek dot-matrix aesthet
 
 ![Aria2 Dashboard Options](sc2.png)
 
-![Aria2 Dashboard Full](sc3.png)
+![Aria2 Dashboard Options2](sc3.png)
+
+![Aria2 Dashboard Full](sc4.png)
 
 ## Features
 
