@@ -1,32 +1,29 @@
 #!/bin/bash
 set -e
 
-DIST_DIR="dist"
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DIST_DIR="$ROOT_DIR/dist"
 
-rm -rf "$ROOT_DIR/$DIST_DIR"
-mkdir -p "$ROOT_DIR/$DIST_DIR"
+echo "Building Chrome extension with Vite..."
+npm run build:chrome
 
+echo ""
+echo "Building Firefox extension with Vite..."
+npm run build:firefox
+
+echo ""
 echo "Packaging Chrome extension..."
-cd "$ROOT_DIR"
+cd "$ROOT_DIR/dist/chrome"
 zip -r "$DIST_DIR/aria2-dashboard-chrome.zip" \
-  manifest.json \
-  src/ \
-  icons/ \
+  . \
   -x "*.DS_Store"
 
 echo "Packaging Firefox extension..."
-TMP_DIR=$(mktemp -d)
-cp "$ROOT_DIR/firefox/manifest.json" "$TMP_DIR/"
-cp -r "$ROOT_DIR/src" "$TMP_DIR/src"
-cp -r "$ROOT_DIR/firefox/icons" "$TMP_DIR/icons"
-cd "$TMP_DIR"
-zip -r "$ROOT_DIR/$DIST_DIR/aria2-dashboard-firefox.zip" \
-  manifest.json \
-  src/ \
-  icons/ \
+cd "$ROOT_DIR/dist/firefox"
+zip -r "$DIST_DIR/aria2-dashboard-firefox.zip" \
+  . \
   -x "*.DS_Store"
-rm -rf "$TMP_DIR"
 
-echo "Done! Packages in $DIST_DIR/:"
-ls -lh "$ROOT_DIR/$DIST_DIR/"
+echo ""
+echo "Done! Packages:"
+ls -lh "$DIST_DIR/aria2-dashboard-chrome.zip" "$DIST_DIR/aria2-dashboard-firefox.zip"

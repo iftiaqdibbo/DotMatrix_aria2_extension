@@ -40,12 +40,14 @@
     --p-gray-700: #252525;
     --p-gray-400: #3a3a3a;
     --p-gray-300: #707070;
+    --p-gray-300-rgb: 112, 112, 112;
     --p-gray-100: #d8d8d8;
 
     /* ── Accent family (red) ────────────────────────────────────────────────── */
     /* ⚠  ALL rgba() values below are derived from --p-accent-base.             */
     /*    If you change the hue, update every value in this entire block.       */
     --p-accent-base: #ff1a1a;
+    --p-accent-base-rgb: 255, 26, 26;
     --p-accent-light: #ff3333;
     --p-accent-dim: rgba(255, 26, 26, 0.08); /* tinted surfaces             */
     --p-accent-glow: rgba(255, 26, 26, 0.25); /* ambient glow, box-shadows   */
@@ -67,12 +69,12 @@
         26,
         0.45
     ); /* ripple burst, focus rings   */
-    /* NOTE: fine-grained animation rgba values (0.6–0.85 range) live in        */
-    /* style.css. Search "rgba(255, 26, 26" there if you need to retune them.   */
+    /* NOTE: style.css now references these via --accent-rgb / --amber-rgb / --green-rgb / --gray-300-rgb. */
 
     /* ── Amber family (warning / waiting) ──────────────────────────────────── */
     /* ⚠  All rgba() values must stay in sync with --p-amber-base.             */
     --p-amber-base: #f59e0b;
+    --p-amber-base-rgb: 245, 158, 11;
     --p-amber-dim: rgba(
         245,
         158,
@@ -89,6 +91,7 @@
     /* ── Green family (success / complete) ─────────────────────────────────── */
     /* ⚠  All rgba() values must stay in sync with --p-green-base.             */
     --p-green-base: #00e676;
+    --p-green-base-rgb: 0, 230, 118;
     --p-green-dim: rgba(
         0,
         230,
@@ -133,6 +136,7 @@
     /* ── Accent ─────────────────────────────────────────────────────────────── */
     /* Primary interactive color: active states, focus rings, highlights.       */
     --accent: var(--p-accent-base);
+    --accent-rgb: var(--p-accent-base-rgb);
     --accent-bright: var(--p-accent-light);
     --accent-dim: var(--p-accent-dim);
     --accent-glow: var(--p-accent-glow);
@@ -153,6 +157,7 @@
 
     /* ── Status: warning ────────────────────────────────────────────────────── */
     --amber: var(--p-amber-base);
+    --amber-rgb: var(--p-amber-base-rgb);
     --amber-dim: var(--p-amber-dim);
     --amber-glow: var(
         --p-amber-glow
@@ -160,10 +165,14 @@
 
     /* ── Status: success ────────────────────────────────────────────────────── */
     --green: var(--p-green-base);
+    --green-rgb: var(--p-green-base-rgb);
     --green-dim: var(--p-green-dim);
     --green-glow: var(
         --p-green-glow
     ); /* dot / button glows                   */
+
+    /* ── Neutral (for derived rgba values) ──────────────────────────────────── */
+    --gray-300-rgb: var(--p-gray-300-rgb);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -212,6 +221,7 @@
 /* ── Catppuccin Mocha ────────────────────────────────────────────────────── */
 [data-theme="catppuccin"] {
     --accent: #f38ba8;
+    --accent-rgb: 243, 139, 168;
     --accent-bright: #f5a0b8;
     --accent-dim: rgba(243, 139, 168, 0.08);
     --accent-glow: rgba(243, 139, 168, 0.25);
@@ -223,10 +233,12 @@
     --red-dim: rgba(243, 139, 168, 0.08);
 
     --amber: #fab387;
+    --amber-rgb: 250, 179, 135;
     --amber-dim: rgba(250, 179, 135, 0.08);
     --amber-glow: rgba(250, 179, 135, 0.3);
 
     --green: #a6e3a1;
+    --green-rgb: 166, 227, 161;
     --green-dim: rgba(166, 227, 161, 0.08);
     --green-glow: rgba(166, 227, 161, 0.3);
 }
@@ -234,6 +246,7 @@
 /* ── Dracula ─────────────────────────────────────────────────────────────── */
 [data-theme="dracula"] {
     --accent: #ff79c6;
+    --accent-rgb: 255, 121, 198;
     --accent-bright: #ff92d0;
     --accent-dim: rgba(255, 121, 198, 0.08);
     --accent-glow: rgba(255, 121, 198, 0.25);
@@ -245,10 +258,12 @@
     --red-dim: rgba(255, 85, 85, 0.08);
 
     --amber: #f1fa8c;
+    --amber-rgb: 241, 250, 140;
     --amber-dim: rgba(241, 250, 140, 0.08);
     --amber-glow: rgba(241, 250, 140, 0.3);
 
     --green: #50fa7b;
+    --green-rgb: 80, 250, 123;
     --green-dim: rgba(80, 250, 123, 0.08);
     --green-glow: rgba(80, 250, 123, 0.3);
 }
@@ -256,6 +271,7 @@
 /* ── Nord ────────────────────────────────────────────────────────────────── */
 [data-theme="nord"] {
     --accent: #88c0d0;
+    --accent-rgb: 136, 192, 208;
     --accent-bright: #8fc1d0;
     --accent-dim: rgba(136, 192, 208, 0.08);
     --accent-glow: rgba(136, 192, 208, 0.25);
@@ -267,10 +283,12 @@
     --red-dim: rgba(191, 97, 106, 0.08);
 
     --amber: #ebcb8b;
+    --amber-rgb: 235, 203, 139;
     --amber-dim: rgba(235, 203, 139, 0.08);
     --amber-glow: rgba(235, 203, 139, 0.3);
 
     --green: #a3be8c;
+    --green-rgb: 163, 190, 140;
     --green-dim: rgba(163, 190, 140, 0.08);
     --green-glow: rgba(163, 190, 140, 0.3);
 }
@@ -278,6 +296,7 @@
 /* ── Tokyo Night ─────────────────────────────────────────────────────────── */
 [data-theme="tokyo-night"] {
     --accent: #7aa2f7;
+    --accent-rgb: 122, 162, 247;
     --accent-bright: #8ab4f8;
     --accent-dim: rgba(122, 162, 247, 0.08);
     --accent-glow: rgba(122, 162, 247, 0.25);
@@ -289,10 +308,12 @@
     --red-dim: rgba(247, 118, 142, 0.08);
 
     --amber: #e0af68;
+    --amber-rgb: 224, 175, 104;
     --amber-dim: rgba(224, 175, 104, 0.08);
     --amber-glow: rgba(224, 175, 104, 0.3);
 
     --green: #9ece6a;
+    --green-rgb: 158, 206, 106;
     --green-dim: rgba(158, 206, 106, 0.08);
     --green-glow: rgba(158, 206, 106, 0.3);
 }

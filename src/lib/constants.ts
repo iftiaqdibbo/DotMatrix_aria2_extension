@@ -1,8 +1,8 @@
-const ARIA2_DEFAULT_RPC_URL = "http://localhost:6800/jsonrpc";
+export const ARIA2_DEFAULT_RPC_URL = "http://localhost:6800/jsonrpc";
 
-const ARIA2_DEFAULT_FILTER_EXTENSIONS = [];
+export const ARIA2_DEFAULT_FILTER_EXTENSIONS: string[] = [];
 
-const ARIA2_DEFAULT_SAFE_MODE_HOSTS = [
+export const ARIA2_DEFAULT_SAFE_MODE_HOSTS: string[] = [
   "gofile.io",
   "1fichier.com",
   "pixeldrain.com",
@@ -34,7 +34,13 @@ const ARIA2_DEFAULT_SAFE_MODE_HOSTS = [
   "oshi.at",
 ];
 
-const ARIA2_THEMES = [
+export interface BuiltInTheme {
+  id: string;
+  name: string;
+  accent: string;
+}
+
+export const ARIA2_THEMES: BuiltInTheme[] = [
   { id: "original", name: "Original", accent: "#ff1a1a" },
   { id: "catppuccin", name: "Catppuccin", accent: "#f38ba8" },
   { id: "dracula", name: "Dracula", accent: "#ff79c6" },
@@ -42,4 +48,14 @@ const ARIA2_THEMES = [
   { id: "tokyo-night", name: "Tokyo Night", accent: "#7aa2f7" },
 ];
 
-const ARIA2_CUSTOM_THEMES_KEY = "aria2_custom_themes";
+export interface CustomTheme {
+  id: string;
+  name: string;
+  accent: string;
+  amber: string;
+  green: string;
+}
+
+export type ThemeId = BuiltInTheme["id"] | `custom:${string}`;
+
+export const ARIA2_CUSTOM_THEMES_KEY = "aria2_custom_themes";

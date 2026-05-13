@@ -1,29 +1,27 @@
 # Aria2 Dashboard
 
-A browser extension for managing aria2 downloads with a sleek dot-matrix aesthetic and real-time updates. Supports both Chrome and Firefox.
+A browser extension for managing aria2 downloads with a sleek dot-matrix aesthetic and real-time updates. Built with Lit 3 + Vite 5 + TypeScript. Supports Chrome and Firefox.
 
 ![Aria2 Dashboard Popup](sc1.png)
-
 ![Aria2 Dashboard Options](sc2.png)
-
 ![Aria2 Dashboard Options2](sc3.png)
-
 ![Aria2 Dashboard Full](sc4.png)
 
 ## Features
 
-- **Real-Time Updates**: Live download progress, speed, and status — refreshes continuously via recursive polling
-- **Download Management**: View, pause, resume, stop, and remove downloads
+- **Real-Time Updates**: Live download progress, speed, and status via recursive polling (1s fast / 2.5s idle)
+- **Download Management**: View, pause, resume, stop, and remove downloads from popup or full dashboard
 - **Queue Reordering**: Move waiting downloads up and down the queue
 - **Browser Integration**: Hijack browser downloads and send them directly to aria2
 - **Badge Notifications**: Active download count shown on the extension icon
 - **Site Interception**: Auto-detect download URLs from 30+ file hosting sites (Gofile, 1Fichier, Pixeldrain, MediaFire, RapidGator, etc.)
 - **Safe Mode**: Toggle to force single-connection downloads for rate-limited hosts — prevents 429 errors and connection drops
-- **Safe Mode Site Management**: Add and remove sites from the safe mode list directly in the options UI — no code editing required
-- **File Extension Filters**: Block specific file types (e.g., `.torrent`, `.exe`) from being captured — useful for files you want the browser to handle natively
-- **Shared Options**: Popup and full dashboard share the same options page with tabbed navigation (General + Safe Mode + Filters)
+- **Safe Mode Site Management**: Add and remove sites from the safe mode list directly in the options UI
+- **File Extension Filters**: Block specific file types (e.g., `.torrent`, `.exe`) from being captured
+- **Custom Themes**: Create and edit custom color themes with a built-in editor (accent, amber, green)
+- **Built-in Themes**: Original, Catppuccin, Dracula, Nord, Tokyo Night
 - **Dot-Matrix Aesthetic**: Dark theme with monospace fonts, red accents, and fluid animations (liquid progress bars, sonar rings, spring row entrances, ambient glows)
-- **Modular Theming**: All colors, fonts, and sizing live in `src/theme.css` — retheme the entire extension by editing one file
+- **Modular Theming**: All CSS custom properties in `src/styles/theme.css` — retheme the entire extension by editing one file
 - **Toggleable Hijacking**: Enable/disable browser download interception
 - **RPC Authentication**: Support for aria2 secret tokens
 - **Cookie Forwarding**: Automatically sends cookies and referrer to aria2 for authenticated downloads
@@ -33,25 +31,27 @@ A browser extension for managing aria2 downloads with a sleek dot-matrix aesthet
 ### Chrome
 
 1. Clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked"
-5. Select the root folder of this repository
+2. Run `npm run build:chrome` (or `./build.sh`)
+3. Open Chrome and go to `chrome://extensions/`
+4. Enable "Developer mode"
+5. Click "Load unpacked"
+6. Select `dist/chrome/`
 
 ### Firefox
 
 1. Clone this repository
-2. Open Firefox and go to `about:debugging`
-3. Click "This Firefox" → "Load Temporary Add-on"
-4. Select `firefox/manifest.json` in this repository
+2. Run `npm run build:firefox` (or `./build.sh`)
+3. Open Firefox and go to `about:debugging`
+4. Click "This Firefox" → "Load Temporary Add-on"
+5. Select `dist/firefox/manifest.json`
 
-**Note:** Firefox temporary add-ons are removed when the browser closes. For permanent installation, the extension needs to be signed by Mozilla and distributed via [AMO](https://addons.mozilla.org/).
+**Note:** Firefox temporary add-ons are removed when the browser closes. For permanent installation, sign via [AMO](https://addons.mozilla.org/).
 
 ### From Release
 
-1. Download a version from release
+1. Download a release zip
 2. Extract it
-3. Follow steps 2-5 from above
+3. Follow steps 3-5 from Chrome or 3-5 from Firefox above (point to the extracted folder)
 
 ## Install aria2
 
@@ -77,134 +77,49 @@ You can pass a custom RPC secret as an argument:
 .\install-aria2.ps1 my-secret-token
 ```
 
-The script will:
-1. Detect your package manager (apt, pacman, dnf, brew) or download the Windows binary from GitHub
-2. Install aria2
-3. Start aria2 with RPC on port 6800
-4. Print the RPC URL and secret to use in the extension
-
 ### Manual Install
 
-If you prefer to install manually:
-
 **Linux:**
+- Arch: `sudo pacman -S aria2`
+- Debian/Ubuntu: `sudo apt update && sudo apt install -y aria2`
+- Fedora: `sudo dnf install -y aria2`
 
-- Arch Linux / CachyOS:
-  ```bash
-  sudo pacman -S aria2
-  ```
-- Debian / Ubuntu:
-  ```bash
-  sudo apt update && sudo apt install -y aria2
-  ```
-- Fedora:
-  ```bash
-  sudo dnf install -y aria2
-  ```
+**macOS:** `brew install aria2`
 
-**macOS:**
+**Windows:** `winget install aria2.aria2` or `choco install aria2`
 
-Install with Homebrew:
-```bash
-brew install aria2
-```
+### Start aria2 with RPC enabled
 
-**Windows:**
-
-- Install with Winget:
-  ```powershell
-  winget install aria2.aria2
-  ```
-- Or with Chocolatey:
-  ```powershell
-  choco install aria2
-  ```
-- Or download from [GitHub releases](https://github.com/aria2/aria2/releases)
-
-### Start aria2 with RPC enabled (required)
-
-Quick start:
 ```bash
 aria2c --enable-rpc --rpc-listen-all=false --rpc-listen-port=6800 --rpc-secret="change-me"
 ```
 
-- Extension default RPC URL: `http://localhost:6800/jsonrpc`
-- Put the same secret in extension options (`Secret Token`)
-
-To auto-start aria2 on login, add the command above (with `-D` for daemon mode) to your shell profile on Linux/macOS, or place a shortcut in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` on Windows.
-
-Optional persistent config (`aria2.conf`):
-```ini
-enable-rpc=true
-rpc-listen-all=false
-rpc-listen-port=6800
-rpc-secret=change-me
-```
-
-Then start aria2 with:
-```bash
-aria2c --conf-path=/path/to/aria2.conf
-```
+Extension default RPC URL: `http://localhost:6800/jsonrpc`
 
 ## Configuration
 
-1. Make sure aria2 is running with RPC enabled:
-   ```bash
-   aria2c --enable-rpc --rpc-listen-all=false --rpc-listen-port=6800
-   ```
-
-2. Click the extension icon and open Options
-3. Set your RPC URL (default: `http://localhost:6800/jsonrpc`)
-4. Enter your secret token if configured
-5. Test the connection
+1. Make sure aria2 is running with RPC enabled
+2. Click the extension icon and open the full dashboard (gear icon)
+3. Click the gear icon in the dashboard header to open Settings
+4. Set your RPC URL (default: `http://localhost:6800/jsonrpc`)
+5. Enter your secret token if configured
+6. Test the connection
+7. Save settings
 
 ### Safe Mode
 
-When enabled (default), downloads from known restrictive file hosts are sent to aria2 with:
+When enabled (default), downloads from known restrictive file hosts use:
 - `max-connection-per-server: 1` — single connection to avoid rate limits
 - `split: 1` — no chunk splitting
-- `enable-http-pipelining: false` — prevents connection drops on some CDNs
-
-This prevents 429 (Too Many Requests) errors and connection drops that occur when aria2's optimized multi-connection settings hammer rate-limited servers.
-
-#### Managing Safe Mode Sites
-
-Safe mode sites are managed through the options page:
-
-1. Open the extension options (gear icon from popup, or from the full dashboard)
-2. Switch to the **Safe Mode** tab
-3. Toggle safe mode on/off
-4. View all sites currently in the safe mode list
-5. Add new sites by typing a domain (e.g. `example.com`) and clicking "add" or pressing Enter
-6. Remove sites by clicking the X button on any site chip
-
-Changes take effect immediately — no need to save or reload.
-
-To add a new site for content script interception (auto-detecting download URLs), you still need to add a regex pattern to `siteInterceptors` in `src/content.js`. However, adding a domain to the safe mode list only requires the options UI — if you're already intercepting the URL through hijack or context menu, safe mode will apply automatically.
+- `enable-http-pipelining: false` — prevents connection drops
 
 ### File Extension Filters
 
-File extension filters let you exclude specific file types from being captured by aria2. When a filter is active, downloads matching the extension will be ignored by:
-- Browser download hijacking
-- Content script interception
-- Context menu "Download with aria2"
-- Manual "Add Download"
+Filters let you exclude specific file types (e.g., `.torrent`, `.exe`) from being captured. Managed through the dashboard's Settings → Filters tab.
 
-This is useful for file types you want the browser to handle natively instead of sending to aria2.
+### Custom Themes
 
-#### Managing Filters
-
-Filters are managed through the options page:
-
-1. Open the extension options (gear icon from popup, or from the full dashboard)
-2. Switch to the **Filters** tab
-3. Type a file extension (e.g. `.torrent`, `.exe`, `.zip`) and click "add" or press Enter
-4. Extensions are normalized with a leading dot and stored lowercase
-5. Remove filters by clicking the X button on any filter chip
-
-Changes take effect immediately — no need to save or reload.
-
-⚠ **Note:** Filtering happens on the URL pathname. URLs without a recognizable file extension in the path (e.g., API-generated downloads) cannot be filtered. For those cases, use the "Hijack Downloads" toggle to selectively disable interception.
+Create custom color themes through the dashboard's Settings → Themes tab. Built-in themes include Original, Catppuccin, Dracula, Nord, and Tokyo Night.
 
 ## Usage
 
@@ -212,71 +127,86 @@ Changes take effect immediately — no need to save or reload.
 - Quick view of active and waiting downloads
 - Compact stats (active, waiting, speed)
 - Toggle download hijacking
-- Action buttons for each download (pause, resume, stop, reorder)
-- Gear icon opens the shared options page in a new tab
+- Action buttons (pause, resume, stop, reorder)
+- Gear icon opens the full dashboard (which includes built-in settings)
 
 ### Full Dashboard
-- Complete download management
-- Tabbed interface (active/waiting/stopped)
-- Reorder waiting downloads (move up/down in queue)
-- Gear icon opens embedded options panel (General + Safe Mode tabs)
-- Real-time updates
-
-### Options Page
-- **General tab**: RPC URL, secret token, download path, hijack toggle, test connection, quick actions
-- **Safe Mode tab**: Safe mode toggle, managed sites list with add/remove
-- **Filters tab**: File extension filter list with add/remove — block specific file types from being captured
-- Accessible from popup (gear icon), full dashboard (gear icon), or `chrome://extensions` → options
-
-### Download Hijacking
-Enable "Hijack Downloads" to intercept browser downloads and send them to aria2 automatically.
-
-**How it works:**
-- Uses the downloads API to intercept browser downloads
-- Content script monitors fetch/XHR responses for hidden download URLs from file hosting sites
-- Extracts cookies and forwards them to aria2
-- Sends referrer and cookie headers so authenticated sites (e.g. Gofile) work correctly
-- Right-click any link and select "Download with aria2"
-
-### Supported File Hosts (Site Interception)
-
-The content script scans fetch/XHR responses for download URLs from these hosts:
-
-1Fichier, Bowfile, Chomikuj, ClickNUpload, DailyUploads, DataNodes, DayUploads, DL.Free, DownMediaLoad, FileBin, FileDitch, FreedLink, Gofile, HexLoad, 1CloudFile, MediaFire, Mega, MegaUp, MixDrop, NitroFlare, Oshi.at, osu!ppy, Pixeldrain, RapidGator, Ranoz, SwissTransfer, Tmpfiles, UploadNow, UsersDrive, VikingFile, WDHO
+- Complete download management with sidebar stats
+- Tabbed interface (active/waiting/stopped) with search
+- Add downloads, reorder queue, refresh
+- Gear icon opens the settings panel (connection, safe mode, filters, themes) built into the dashboard
+- **Settings tabs**: General (RPC URL, secret token, download path, notifications, hijack toggle, theme), Safe Mode, Filters, Themes
 
 ## Building
 
-Run the build script to package for both browsers:
+### Prerequisites
+
+- Node.js >= 18
+- npm
+
+### Setup
+
 ```bash
-./build.sh
+npm install
 ```
 
-This creates:
-- `dist/aria2-dashboard-chrome.zip`
-- `dist/aria2-dashboard-firefox.zip`
+### Build
+
+```bash
+# Type-check + build for both browsers
+npm run build
+
+# Individual builds
+npm run build:chrome    # outputs to dist/chrome/
+npm run build:firefox   # outputs to dist/firefox/
+
+# Package as .zip
+./build.sh              # runs npm builds + creates zips in dist/
+```
+
+### Development
+
+```bash
+npm run dev             # Vite dev server (for testing HTML pages)
+npm run typecheck       # TypeScript type-check only
+```
 
 ## File Structure
 
 ```
-├── manifest.json          # Chrome extension manifest
-├── build.sh               # Build script for packaging
-├── install-aria2.sh       # aria2 installer (Linux/macOS)
-├── install-aria2.ps1      # aria2 installer (Windows)
-├── src/                   # Shared source files
-│   ├── constants.js       # Shared constants (RPC URL, safe mode hosts)
-│   ├── background.js      # Chrome service worker
-│   ├── content.js         # Content script for site-specific URL interception
-│   ├── popup.html/js      # Popup panel
-│   ├── options.html/js    # Options page (shared between popup and full dashboard)
-│   ├── full.html/js       # Full dashboard (loads options.js for embedded settings)
-│   ├── theme.css          # Design tokens — colors, fonts, radii (edit here to retheme)
-│   └── style.css          # Structural styles (references theme.css tokens only)
-├── icons/                 # Extension icons
-├── firefox/               # Firefox-specific files
-│   ├── manifest.json      # Firefox manifest (with gecko settings)
-│   ├── background.js      # Firefox background script (promise-based APIs)
-│   └── icons/             # Copy of extension icons
-└── dist/                  # Build output (gitignored)
+├── build.sh                   # Build + package script
+├── package.json               # Dependencies: lit, vite, typescript
+├── vite.config.ts             # Multi-entry Vite config (popup/full)
+├── tsconfig.json              # Strict TypeScript config
+├── manifest.lit.json          # Chrome manifest for Lit build (copied as manifest.json)
+├── firefox/
+│   ├── manifest.json          # Firefox manifest
+│   ├── icons/                 # Firefox icons
+│   └── background.js          # Firefox background script (promise-based APIs)
+├── src/
+│   ├── entries/               # HTML entry points for Vite
+│   │   ├── popup.html
+│   │   └── full.html
+│   ├── entries/full.ts        # Full dashboard bootstrap entry
+│   ├── components/            # Lit Web Components (light DOM)
+│   │   ├── aria2-logo.ts           # Dot-matrix SVG logo
+│   │   ├── aria2-chip-list.ts       # Reusable chip list
+│   │   ├── aria2-download-row.ts    # Download row (compact + full modes)
+│   │   ├── aria2-popup.ts           # Popup view
+│   │   ├── aria2-options.ts         # Settings form (embedded in dashboard)
+│   │   ├── aria2-theme-editor.ts    # Custom theme editor
+│   │   └── aria2-dashboard.ts       # Full dashboard view
+│   ├── lib/                   # TypeScript modules
+│   │   ├── constants.ts       # Constants + type definitions
+│   │   ├── shared.ts          # Config, aria2 RPC, formatting utilities
+│   │   └── theme.ts           # Theme engine (apply, compute vars, custom themes)
+│   ├── styles/
+│   │   ├── theme.css          # Design tokens — colors, fonts, radii
+│   │   └── shared.css         # Structural styles
+│   ├── background.js          # Chrome service worker (vanilla JS)
+│   └── content.js             # Content script (vanilla JS)
+├── icons/                     # Extension icons
+└── dist/                      # Build output (gitignored)
 ```
 
 ### Chrome vs Firefox Differences
@@ -291,7 +221,7 @@ This creates:
 
 ## Permissions
 
-- `storage`: Save settings and safe mode host list
+- `storage`: Save settings, safe mode hosts, filter extensions, custom themes
 - `activeTab`: Browser integration
 - `contextMenus`: Right-click download option
 - `notifications`: Download status notifications
@@ -303,29 +233,9 @@ This creates:
 
 MIT
 
-## Troubleshooting
-
-### Downloads failing on certain sites
-- Enable **Safe Mode** in options — this forces single-connection downloads for known restrictive hosts
-- Make sure the site is in the safe mode list (Options → Safe Mode tab). Add it if missing
-- Try using the context menu (right-click → "Download with aria2")
-- Ensure the "Hijack Downloads" toggle is enabled
-- Check that aria2 is running and connected
-
-### Downloads going to wrong directory
-- Set the download path in the extension options page
-- If empty, aria2 uses its own `dir` config from `aria2.conf`
-
-### aria2 not connecting
-- Ensure aria2 is running with RPC enabled: `aria2c --enable-rpc`
-- Check the RPC URL in extension options (default: `http://localhost:6800/jsonrpc`)
-- Verify firewall settings allow connections to the RPC port
-
-### Badge not updating
-- Badge shows the active download count and updates when the popup or full dashboard is open
-- Close and reopen the popup to trigger a refresh if the count seems stale
-
 ## Credits
 
 - Fonts: Doto, Space Mono, Space Grotesk (Google Fonts)
 - Aria2: [aria2/aria2](https://github.com/aria2/aria2)
+- Lit 3: [lit.dev](https://lit.dev)
+- Vite 5: [vitejs.dev](https://vitejs.dev)
