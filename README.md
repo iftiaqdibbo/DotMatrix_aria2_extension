@@ -325,6 +325,8 @@ npm run typecheck      # TypeScript type checking
     ├── firefox/               # Firefox unpacked build
     ├── aria2-dashboard-chrome.zip
     └── aria2-dashboard-firefox.zip
+```
+
 ### Chrome vs Firefox Differences
 
 | Aspect | Chrome | Firefox |
