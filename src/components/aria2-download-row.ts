@@ -13,15 +13,6 @@ function formatCompletedTime(unixSeconds: string): string {
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
-function renderDotProgress(percent: number, totalDots: number, mini: boolean): string {
-  const filledDots = Math.round((percent / 100) * totalDots);
-  let dots = "";
-  for (let i = 0; i < totalDots; i++) {
-    dots += `<span class="dot ${i < filledDots ? "filled" : ""}" style="--i:${i}"></span>`;
-  }
-  return `<div class="dot-progress ${mini ? "mini" : ""}">${dots}</div>`;
-}
-
 export class Aria2DownloadRow extends LitElement {
   @property({ type: Object }) download: Aria2Download | null = null;
   @property({ type: Boolean }) compact = false;
@@ -84,17 +75,7 @@ export class Aria2DownloadRow extends LitElement {
   }
 
   private _renderRecentCompact(d: Aria2Download, total: number, percent: number) {
-    const completedTime = d.completedTime
-      ? (() => {
-          const date = new Date(parseInt(d.completedTime, 10) * 1000);
-          const now = new Date();
-          const diffMs = now.getTime() - date.getTime();
-          const diffDays = Math.floor(diffMs / 86400000);
-          if (diffDays === 0) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          if (diffDays === 1) return "yesterday";
-          return diffDays + "d ago";
-        })()
-      : "";
+    const completedTime = d.completedTime ? formatCompletedTime(d.completedTime) : "";
 
     return html`
       <div class="download-item popup-item">

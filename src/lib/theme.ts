@@ -19,7 +19,11 @@ function storageSet(values: Record<string, unknown>): Promise<void> {
 }
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const val = parseInt(hex.replace("#", ""), 16);
+  let cleaned = hex.replace("#", "");
+  if (cleaned.length === 3) {
+    cleaned = cleaned[0] + cleaned[0] + cleaned[1] + cleaned[1] + cleaned[2] + cleaned[2];
+  }
+  const val = parseInt(cleaned, 16);
   return { r: (val >> 16) & 255, g: (val >> 8) & 255, b: val & 255 };
 }
 

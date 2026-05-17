@@ -176,7 +176,7 @@ export class Aria2Options extends LitElement {
   private async _onThemeChange(e: Event) {
     const val = (e.target as HTMLSelectElement).value as ThemeId;
     this._theme = val;
-    applyTheme(val);
+    await applyTheme(val);
   }
 
   private _openCreateTheme() {
@@ -211,7 +211,7 @@ export class Aria2Options extends LitElement {
     await this._refreshCustomThemes();
     await this._refreshThemeSelect();
     this._theme = newThemeId;
-    applyTheme(newThemeId);
+    await applyTheme(newThemeId);
   }
 
   private _onThemeCancel() {
@@ -227,10 +227,6 @@ export class Aria2Options extends LitElement {
     await this._refreshThemeSelect();
     await this._refreshCustomThemes();
   }
-
-  private _openDashboard() {}
-  private _onNavigateBack() {}
-  private _addDownload() {}
 
   private _themeSwatchColor(): string {
     const found = this._themeSelectOptions.find(t => t.id === this._theme);
@@ -388,7 +384,7 @@ export class Aria2Options extends LitElement {
                   : this._hosts.map((host, i) => html`
                     <div class="host-chip">
                       <span class="host-chip-name">${escapeHtml(host)}</span>
-                      <button class="host-chip-remove" @click=${() => this._removeHost(i)} title="Remove ${escapeHtml(host)}">
+                      <button class="host-chip-remove" @click=${() => this._removeHost(i)} title="Remove">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
@@ -418,11 +414,11 @@ export class Aria2Options extends LitElement {
                     : this._filters.map((ext, i) => html`
                       <div class="host-chip">
                         <span class="host-chip-name">${escapeHtml(ext)}</span>
-                        <button class="host-chip-remove" @click=${() => this._removeFilter(i)} title="Remove ${escapeHtml(ext)}">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                          </svg>
-                        </button>
+<button class="host-chip-remove" @click=${() => this._removeFilter(i)} title="Remove">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
                       </div>
                     `)}
                 </div>

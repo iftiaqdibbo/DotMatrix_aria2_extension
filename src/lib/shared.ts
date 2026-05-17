@@ -81,7 +81,7 @@ export async function callAria2(method: string, params: unknown[] = []): Promise
   const secretToken = config.secret ? [`token:${config.secret}`] : [];
   const body = {
     jsonrpc: "2.0",
-    id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+    id: crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)),
     method,
     params: [...secretToken, ...params],
   };
@@ -103,7 +103,7 @@ export async function testConnectionWithParams(rpcUrl: string, secret: string): 
   const secretToken = secret ? [`token:${secret}`] : [];
   const body = {
     jsonrpc: "2.0",
-    id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+    id: crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)),
     method: "aria2.getVersion",
     params: secretToken,
   };

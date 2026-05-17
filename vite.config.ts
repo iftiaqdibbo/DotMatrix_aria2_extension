@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
         input: {
           popup: resolve(__dirname, "src/entries/popup.html"),
           full: resolve(__dirname, "src/entries/full.html"),
+          options: resolve(__dirname, "src/entries/options.html"),
         },
         output: {
           entryFileNames: "assets/[name].js",

@@ -70,6 +70,9 @@ export class Aria2Dashboard extends LitElement {
   @state() private _searchQuery = "";
   @state() private _loading = true;
   @state() private _error: string | null = null;
+  @state() private _showAddDialog = false;
+  @state() private _addUrl = "";
+  @state() private _addError = "";
 
   private _pollTimeout: number | null = null;
   private _POLL_FAST_MS = 1000;
@@ -146,12 +149,29 @@ export class Aria2Dashboard extends LitElement {
   }
 
   private _addDownload() {
-    const url = prompt("Enter download URL:");
-    if (url) {
-      addDownload([url])
-        .then(() => this._loadData())
-        .catch((err) => alert("Failed: " + err.message));
+    this._addUrl = "";
+    this._addError = "";
+    this._showAddDialog = true;
+  }
+
+  private async _confirmAddDownload() {
+    const url = this._addUrl.trim();
+    if (!url) return;
+    try {
+      await addDownload([url]);
+      this._showAddDialog = false;
+      this._addUrl = "";
+      this._addError = "";
+      await this._loadData();
+    } catch (err) {
+      this._addError = (err as Error).message;
     }
+  }
+
+  private _cancelAddDownload() {
+    this._showAddDialog = false;
+    this._addUrl = "";
+    this._addError = "";
   }
 
   private _refresh() {
@@ -407,6 +427,21 @@ export class Aria2Dashboard extends LitElement {
 
         <footer><p class="footer-text">aria2 dashboard</p></footer>
       </div>
+
+      ${this._showAddDialog ? html`
+        <div class="modal-overlay" @click=${this._cancelAddDownload}>
+          <div class="modal-dialog" @click=${(e: Event) => e.stopPropagation()}>
+            <h3 class="modal-title">add download</h3>
+            <input type="text" class="input modal-input" placeholder="Enter download URL"
+              .value=${this._addUrl} @input=${(e: Event) => this._addUrl = (e.target as HTMLInputElement).value}
+              @keydown=${(e: Event) => { if ((e as KeyboardEvent).key === "Enter") this._confirmAddDownload(); }}>
+            ${this._addError ? html`<div class="modal-error">${escapeHtml(this._addError)}</div>` : nothing}
+            <div class="modal-actions">
+              <button class="btn btn-primary" @click=${this._confirmAddDownload}>add</button>
+              <button class="btn btn-secondary" @click=${this._cancelAddDownload}>cancel</button>
+            </div>
+          </div>
+        </div>` : nothing}
     `;
   }
 }

@@ -2,6 +2,10 @@ import { LitElement, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { escapeHtml } from "../lib/shared";
 
+function safeStyle(accent: string): string {
+  return `background:${accent};box-shadow:0 0 4px ${accent}66;`;
+}
+
 export interface ChipData {
   label: string;
   accent?: string;
@@ -25,7 +29,7 @@ export class Aria2ChipList extends LitElement {
         ${this.chips.map((chip, i) => html`
           <div class="host-chip theme-chip">
             ${chip.accent
-              ? html`<span class="theme-chip-swatch" style="background:${chip.accent};box-shadow:0 0 4px ${chip.accent}66;"></span>`
+              ? html`<span class="theme-chip-swatch" style="${safeStyle(chip.accent)}"></span>`
               : nothing}
             <span class="host-chip-name">${escapeHtml(chip.label)}</span>
             ${chip.editable

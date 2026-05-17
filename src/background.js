@@ -497,9 +497,16 @@ async function getSafeModeOptions(url) {
 async function captureDownloadItem(item, referer, cookies) {
   const url = item.finalUrl || item.url;
   const filename = basename(item.filename);
-  if (filename && (await isUrlFilteredByExtension(filename))) {
-    console.log("[Aria2] Skipping capture - filename extension is filtered:", filename);
-    return;
+  if (filename) {
+    const ext = getFileExtensionFromPath(filename);
+    if (ext) {
+      const { aria2_filter_extensions } = await chrome.storage.local.get(["aria2_filter_extensions"]);
+      const filters = aria2_filter_extensions || ARIA2_DEFAULT_FILTER_EXTENSIONS;
+      if (filters.some((f) => f.toLowerCase() === ext)) {
+        console.log("[Aria2] Skipping capture - filename extension is filtered:", filename);
+        return;
+      }
+    }
   }
   const extraOptions = await getSafeModeOptions(url);
   await addUriToAria2(url, referer, cookies, filename, null, extraOptions);
@@ -531,11 +538,18 @@ async function handleDownload(downloadItem, handler) {
   handler(downloadItem, referrer, cookies);
 }
 
-if (chrome.downloads.onChanged) {
-  chrome.downloads.onChanged.addListener(async (downloadDelta) => {
+chrome.downloads.onChanged.addListener(async (downloadDelta) => {
     let downloadItem = downloadItems[downloadDelta.id];
     if (!downloadItem) {
       downloadItem = await recoverDownloadItem(downloadDelta.id);
+    }
+    if (!downloadItem && !isFirefox()) {
+      try {
+        const results = await chrome.downloads.search({ id: downloadDelta.id });
+        if (results.length > 0) {
+          downloadItem = results[0];
+        }
+      } catch {}
     }
     if (!downloadItem) {
       return;
@@ -574,10 +588,9 @@ if (chrome.downloads.onChanged) {
       capturedIds.delete(downloadDelta.id);
     }
   });
-}
 
-chrome.downloads.onCreated.addListener(async (downloadItem) => {
-  if (isFirefox()) {
+if (isFirefox()) {
+  chrome.downloads.onCreated.addListener(async (downloadItem) => {
     await handleDownload(downloadItem, async (item, referrer, cookies) => {
       await removeDownloadItemCompletely(item);
       try {
@@ -591,10 +604,8 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
         showNotification("aria2 Error", err.message);
       }
     });
-  } else {
-    trackDownloadItem(downloadItem.id, downloadItem);
-  }
-});
+  });
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "ADD_DOWNLOAD") {

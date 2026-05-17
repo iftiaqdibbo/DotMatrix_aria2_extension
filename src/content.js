@@ -102,13 +102,11 @@
     });
   }
 
-  if (chrome.storage && chrome.storage.onChanged) {
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === "local" && "aria2_hijack_downloads" in changes) {
-        cachedHijackEnabled = changes.aria2_hijack_downloads.newValue || false;
-      }
-    });
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && "aria2_hijack_downloads" in changes) {
+    cachedHijackEnabled = changes.aria2_hijack_downloads.newValue || false;
   }
+});
 
   setInterval(() => {
     cachedHijackEnabled = null;
